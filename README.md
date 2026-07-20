@@ -108,6 +108,12 @@ de UI. O badge "Modo demo" fica visível no header.
 
 ## Ligando o Claude (modo real)
 
+**Sem terminal (pelo navegador):** siga o guia passo a passo em
+[`supabase/dashboard-deploy/README.md`](supabase/dashboard-deploy/) — copiar e
+colar as duas funções no painel do Supabase.
+
+**Pelo terminal (CLI):**
+
 1. Crie um projeto no [Supabase](https://supabase.com) (free tier).
 2. Aplique a migration:
    ```bash
