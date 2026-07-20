@@ -22,13 +22,23 @@ export function adminClient() {
   );
 }
 
+function envInt(name: string, fallback: number): number {
+  const v = Number(Deno.env.get(name));
+  return Number.isFinite(v) && v > 0 ? v : fallback;
+}
+
+/**
+ * Limites de custo — os defaults são conservadores de propósito (projeto
+ * pessoal, custo mínimo). Ajustáveis sem redeploy de código via secrets:
+ *   supabase secrets set MAX_CALLS_PER_DAY=10
+ */
 export const LIMITS = {
-  /** Máx. de turnos por call — corta histórico infinito. */
-  maxTurnsPerCall: 30,
+  /** Máx. de turnos do rep por call — corta histórico infinito. */
+  maxTurnsPerCall: envInt('MAX_TURNS_PER_CALL', 20),
   /** Máx. de calls (sessões de roleplay) iniciadas por device por dia. */
-  maxCallsPerDay: 10,
+  maxCallsPerDay: envInt('MAX_CALLS_PER_DAY', 6),
   /** Máx. de avaliações por device por dia. */
-  maxEvaluationsPerDay: 12,
+  maxEvaluationsPerDay: envInt('MAX_EVALS_PER_DAY', 8),
 };
 
 /**
@@ -71,7 +81,16 @@ export async function checkAndLogUsage(
 }
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-export const MODEL = 'claude-sonnet-4-6';
+
+/**
+ * Modelos — default no Claude Haiku 4.5 ($1/M entrada, $5/M saída), o mais
+ * barato da família e ótimo para falas curtas em personagem. Uma call de 10
+ * turnos + avaliação custa ~US$ 0,03. Para feedback de coach mais profundo
+ * (custa ~3×), troque só o avaliador:
+ *   supabase secrets set ANTHROPIC_EVAL_MODEL=claude-sonnet-4-6
+ */
+export const MODEL = Deno.env.get('ANTHROPIC_MODEL') ?? 'claude-haiku-4-5';
+export const EVAL_MODEL = Deno.env.get('ANTHROPIC_EVAL_MODEL') ?? MODEL;
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -84,6 +103,7 @@ export async function callClaude(opts: {
   messages: ChatMessage[];
   temperature: number;
   maxTokens: number;
+  model?: string;
 }): Promise<string> {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY secret not set');
@@ -96,7 +116,7 @@ export async function callClaude(opts: {
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: opts.model ?? MODEL,
       system: opts.system,
       messages: opts.messages,
       temperature: opts.temperature,

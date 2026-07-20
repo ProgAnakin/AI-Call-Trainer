@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       return json({ error: 'invalid payload' }, 400);
     }
 
-    // Rate limits: turnos por call + calls por dia por device.
+    // Rate limits (proteção de custo): turnos por call + calls por dia por device.
     if (history.length > LIMITS.maxTurnsPerCall * 2) {
       return json({ error: `turn limit reached (${LIMITS.maxTurnsPerCall} per call)` }, 429);
     }
