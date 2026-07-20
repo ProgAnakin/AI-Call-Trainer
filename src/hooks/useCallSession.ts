@@ -18,8 +18,8 @@ import {
   saveTurn,
 } from '@/lib/storage';
 
-/** Trava client-side espelhando o limite da Edge Function (30 turnos/call). */
-const MAX_REP_TURNS = 30;
+/** Trava client-side espelhando o limite default da Edge Function (20 turnos/call). */
+const MAX_REP_TURNS = 20;
 
 export interface UseCallSession {
   state: CallState;

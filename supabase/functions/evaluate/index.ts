@@ -5,6 +5,7 @@ import {
   callClaude,
   checkAndLogUsage,
   corsHeaders,
+  EVAL_MODEL,
   json,
   LIMITS,
 } from '../_shared/common.ts';
@@ -133,6 +134,7 @@ Deno.serve(async (req) => {
     const system = buildPrompt(body);
     const ask = () =>
       callClaude({
+        model: EVAL_MODEL,
         system,
         messages: [{ role: 'user', content: `TRANSCRIPT:\n${transcriptText}` }],
         temperature: 0.2, // consistência de notas

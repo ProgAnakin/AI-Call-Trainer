@@ -45,7 +45,7 @@ Eles nunca se misturam — o prospect não "sabe" que existe avaliação.
 | UI | Tailwind CSS + componentes próprios estilo shadcn |
 | Animações | Framer Motion |
 | Voz | Web Speech API (`SpeechRecognition` push-to-talk + `speechSynthesis`) |
-| LLM | Claude API (`claude-sonnet-4-6`) via Supabase Edge Functions |
+| LLM | Claude API (`claude-haiku-4-5` por default — configurável) via Supabase Edge Functions |
 | Backend/DB | Supabase (PostgreSQL + Edge Functions) |
 | Deploy | Vercel |
 | Testes | Vitest |
@@ -54,8 +54,44 @@ Eles nunca se misturam — o prospect não "sabe" que existe avaliação.
 
 **A API key da Anthropic NUNCA vai no cliente.** Toda chamada ao LLM passa pelas
 Edge Functions `/roleplay` e `/evaluate`, que guardam a key como secret e aplicam
-**rate limiting por dispositivo** (máx. 30 turnos/call, 10 calls/dia, 12 avaliações/dia).
+**rate limiting por dispositivo** (defaults: 20 turnos/call, 6 calls/dia,
+8 avaliações/dia — ajustáveis via secrets, ver tabela abaixo).
 No cliente só existe a anon key do Supabase.
+
+### 💰 Custo — desenhado para ser (quase) zero
+
+| Item | Custo |
+|---|---|
+| Supabase (banco + Edge Functions) | **€0** — free tier |
+| Vercel (hosting) | **€0** — free tier |
+| Modo demo (sem Claude configurado) | **€0** — prospect e avaliador simulados |
+| Claude API (modo real) | **pay-per-use** — só paga o que consumir, sem mensalidade |
+
+O modelo default é o **Claude Haiku 4.5** (US$ 1/M tokens de entrada,
+US$ 5/M de saída — o mais barato da família e ótimo para falas curtas em
+personagem). Contas reais:
+
+- 1 call de 10 turnos + avaliação ≈ 15–20k tokens ≈ **US$ 0,03**
+- Uso realista de treino (1–3 calls/dia, alguns dias por semana) ≈ **< €1/mês**
+- Pior caso com os limites default (6 calls × 30 dias) ≈ **~€5/mês** — e para
+  isso você teria que treinar no teto do limite todos os dias do mês
+
+Camadas de proteção, da mais interna à mais externa:
+
+1. `max_tokens` baixo em toda chamada (falas curtas por design)
+2. Rate limit por dispositivo nas Edge Functions (tabela abaixo)
+3. **Spend limit na console da Anthropic** — é um TETO, não uma assinatura:
+   configure US$ 5 e é matematicamente impossível gastar mais que isso
+
+Configuração opcional via secrets (sem redeploy):
+
+| Secret | Default | Para quê |
+|---|---|---|
+| `ANTHROPIC_MODEL` | `claude-haiku-4-5` | Modelo do prospect |
+| `ANTHROPIC_EVAL_MODEL` | = `ANTHROPIC_MODEL` | Modelo do avaliador — `claude-sonnet-4-6` dá feedback de coach mais profundo por ~3× o custo |
+| `MAX_CALLS_PER_DAY` | `6` | Calls de roleplay por dispositivo/dia |
+| `MAX_EVALS_PER_DAY` | `8` | Avaliações por dispositivo/dia |
+| `MAX_TURNS_PER_CALL` | `20` | Turnos do rep por call |
 
 ## Rodando localmente
 
@@ -85,8 +121,8 @@ de UI. O badge "Modo demo" fica visível no header.
    ```
 4. Copie `.env.example` para `.env` e preencha `VITE_SUPABASE_URL` e
    `VITE_SUPABASE_ANON_KEY`.
-5. Configure um **spend limit** na console da Anthropic. Uma call de 10 turnos
-   custa ~8–15k tokens; uso diário de treino ≈ poucos euros/mês.
+5. Configure um **spend limit** na console da Anthropic (ex.: US$ 5). É só um
+   teto de segurança — você paga apenas o que usar (ver seção de custo acima).
 
 ## Deploy (Vercel)
 
