@@ -74,21 +74,27 @@ export function Scorecard() {
       >
         <Card className="mb-6">
           <h2 className="mb-3 text-sm font-semibold text-slate-400">{t('score.metrics')}</h2>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid gap-4 text-center sm:grid-cols-3">
             <div>
-              <p className={clsx('font-mono text-xl font-bold', talkOk ? 'text-emerald-400' : 'text-amber-400')}>
-                {evaluation.talk_ratio_estimate ?? formatTalkRatio(metrics.talkRatioRep)}
+              {/* Métrica objetiva calculada em código — não a estimativa da IA (§6). */}
+              <p
+                className={clsx(
+                  'whitespace-nowrap font-mono text-lg font-bold',
+                  talkOk ? 'text-emerald-400' : 'text-amber-400',
+                )}
+              >
+                {formatTalkRatio(metrics.talkRatioRep)}
               </p>
               <p className="text-xs text-slate-500">
                 {t('score.talkRatio')} · {t('score.talkRatioTarget')}
               </p>
             </div>
             <div>
-              <p className="font-mono text-xl font-bold text-slate-200">{metrics.questionsAsked}</p>
+              <p className="font-mono text-lg font-bold text-slate-200">{metrics.questionsAsked}</p>
               <p className="text-xs text-slate-500">{t('score.questions')}</p>
             </div>
             <div>
-              <p className="font-mono text-xl font-bold text-slate-200">
+              <p className="font-mono text-lg font-bold text-slate-200">
                 {formatDuration(metrics.durationSeconds)}
               </p>
               <p className="text-xs text-slate-500">{t('score.duration')}</p>
@@ -107,6 +113,34 @@ export function Scorecard() {
       </div>
 
       <ImprovementList strengths={evaluation.strengths} improvements={evaluation.improvements} />
+
+      {turns.length > 0 && (
+        <motion.details
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.7 }}
+          className="mt-6 rounded-xl border border-slate-800 bg-surface-raised"
+        >
+          <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-400 hover:text-slate-200">
+            {t('score.transcript')} ({turns.length})
+          </summary>
+          <div className="space-y-2 border-t border-slate-800 px-4 py-3">
+            {turns.map((turn) => (
+              <p key={turn.id} className="text-sm leading-relaxed">
+                <span
+                  className={clsx(
+                    'mr-2 font-mono text-[10px] font-bold uppercase',
+                    turn.speaker === 'rep' ? 'text-accent-soft' : 'text-slate-500',
+                  )}
+                >
+                  {turn.speaker === 'rep' ? t('call.you') : 'prospect'}
+                </span>
+                <span className="text-slate-300">{turn.content}</span>
+              </p>
+            ))}
+          </div>
+        </motion.details>
+      )}
 
       <motion.div
         initial={{ opacity: 0 }}

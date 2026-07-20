@@ -8,6 +8,7 @@ import type {
   Scenario,
   Turn,
 } from '@/types';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { getDeviceId, isSupabaseConfigured, supabase } from './supabase';
 import { computeMetrics, formatTalkRatio } from './metrics';
 import { weightedOverall, getFramework } from '@/data/frameworks';
@@ -38,17 +39,39 @@ export interface RoleplayPayload {
 }
 
 /**
+ * Invoca uma Edge Function extraindo a mensagem de erro real do corpo da
+ * resposta (ex.: "daily limit reached") em vez do genérico do supabase-js.
+ */
+async function invokeEdgeFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
+  if (!supabase) throw new Error('supabase not configured');
+  const { data, error } = await supabase.functions.invoke(name, { body });
+  if (error) {
+    let message = error.message;
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const payload = (await error.context.json()) as { error?: string };
+        if (payload?.error) message = payload.error;
+      } catch {
+        // corpo não-JSON: mantém a mensagem genérica
+      }
+    }
+    throw new Error(`${name}: ${message}`);
+  }
+  return data as T;
+}
+
+/**
  * Um turno de conversa com o prospect.
  * Com Supabase: Edge Function /roleplay (que guarda a API key da Anthropic).
  * Sem Supabase: prospect simulado localmente (modo demo, sem custo).
  */
 export async function roleplayTurn(payload: RoleplayPayload): Promise<RoleplayResult> {
   if (supabase) {
-    const { data, error } = await supabase.functions.invoke('roleplay', {
-      body: { ...payload, device_id: getDeviceId() },
+    const data = await invokeEdgeFunction<{ reply: string }>('roleplay', {
+      ...payload,
+      device_id: getDeviceId(),
     });
-    if (error) throw new Error(`roleplay: ${error.message}`);
-    return parseReply((data as { reply: string }).reply ?? '');
+    return parseReply(data.reply ?? '');
   }
   return demoProspect(payload);
 }
@@ -69,11 +92,10 @@ export type EvaluationDraft = Omit<Evaluation, 'id' | 'session_id' | 'created_at
  */
 export async function evaluateCall(payload: EvaluatePayload): Promise<EvaluationDraft> {
   if (supabase) {
-    const { data, error } = await supabase.functions.invoke('evaluate', {
-      body: { ...payload, device_id: getDeviceId() },
+    const d = await invokeEdgeFunction<EvaluationDraft & { overall_score?: number }>('evaluate', {
+      ...payload,
+      device_id: getDeviceId(),
     });
-    if (error) throw new Error(`evaluate: ${error.message}`);
-    const d = data as EvaluationDraft & { overall_score?: number };
     return {
       overall_score: d.overall_score ?? weightedOverall(payload.framework, d.scores),
       scores: d.scores,
@@ -95,8 +117,48 @@ export function isDemoMode(): boolean {
 // completo de UI sem custo. A avaliação usa só as métricas objetivas.
 // ---------------------------------------------------------------------------
 
+/** Falas fixas do prospect demo, na língua do cenário. */
+const DEMO_LINES = {
+  pt: {
+    intro: (name: string) => `${name} falando. Quem é? Estou no meio de uma coisa aqui.`,
+    generic: 'Certo... e por que isso me interessa?',
+    reveal: (pain: string, objection: string) =>
+      `Olha... para ser honesto, ${pain}. Mas ${objection}`,
+    fallbackObjection: 'não sei se é prioridade agora.',
+    pressed: 'Você está tomando meu tempo. Última chance: qual é exatamente a proposta?',
+    close: 'Está bem, você foi direto. Me mande um convite e a gente conversa.',
+    continue: 'Hmm. Continue.',
+  },
+  it: {
+    intro: (name: string) => `Pronto, sono ${name}. Chi parla? Sono nel bel mezzo di una cosa.`,
+    generic: 'Ok... e perché dovrebbe interessarmi?',
+    reveal: (pain: string, objection: string) =>
+      `Guardi... a essere onesti, ${pain}. Però ${objection}`,
+    fallbackObjection: 'non so se è una priorità adesso.',
+    pressed: 'Mi sta facendo perdere tempo. Ultima possibilità: qual è esattamente la proposta?',
+    close: "Va bene, è stato diretto. Mi mandi un invito e ne parliamo.",
+    continue: 'Mmh. Continui.',
+  },
+  en: {
+    intro: (name: string) => `This is ${name}. Who's this? I'm in the middle of something.`,
+    generic: "Okay... and why should I care?",
+    reveal: (pain: string, objection: string) =>
+      `Look... to be honest, ${pain}. But ${objection}`,
+    fallbackObjection: "I'm not sure it's a priority right now.",
+    pressed: "You're wasting my time. Last chance: what exactly is the offer?",
+    close: "Alright, you were direct. Send me an invite and we'll talk.",
+    continue: 'Hmm. Go on.',
+  },
+} as const;
+
 function demoProspect(payload: RoleplayPayload): Promise<RoleplayResult> {
   const { persona, history, scenario } = payload;
+  const langFamily = scenario.language.startsWith('it')
+    ? 'it'
+    : scenario.language.startsWith('en')
+      ? 'en'
+      : 'pt';
+  const L = DEMO_LINES[langFamily];
   const repTurns = history.filter((t) => t.speaker === 'rep').length;
   const lastRep = [...history].reverse().find((t) => t.speaker === 'rep')?.content ?? '';
   const objections = persona.hidden_objections;
@@ -104,22 +166,24 @@ function demoProspect(payload: RoleplayPayload): Promise<RoleplayResult> {
   let reply: string;
 
   if (repTurns <= 1) {
-    reply = `${persona.name} falando. Quem é? Estou no meio de uma coisa aqui.`;
+    reply = L.intro(persona.name);
   } else if (repTurns === 2) {
-    reply = objections[0] ?? 'Certo... e por que isso me interessa?';
+    reply = objections[0] ?? L.generic;
   } else if (repTurns >= 6) {
-    reply = `Está bem, você foi direto. Me mande um convite e a gente conversa. ${MEETING_TOKEN} ${HANGUP_TOKEN}`;
+    reply = `${L.close} ${MEETING_TOKEN} ${HANGUP_TOKEN}`;
   } else if (/\?\s*$/.test(lastRep.trim())) {
     const pain = persona.pain_points[(repTurns - 3) % persona.pain_points.length];
-    reply = `Olha... para ser honesto, ${pain.charAt(0).toLowerCase()}${pain.slice(1)}. Mas ${
-      objections[(repTurns - 1) % objections.length]?.toLowerCase() ?? 'não sei se é prioridade agora.'
-    }`;
+    const objection = objections[(repTurns - 1) % objections.length];
+    reply = L.reveal(
+      `${pain.charAt(0).toLowerCase()}${pain.slice(1)}`,
+      objection ? objection.charAt(0).toLowerCase() + objection.slice(1) : L.fallbackObjection,
+    );
   } else {
-    reply = objections[(repTurns - 1) % objections.length] ?? 'Hmm. Continue.';
+    reply = objections[(repTurns - 1) % objections.length] ?? L.continue;
   }
 
   if (scenario.difficulty >= 4 && repTurns === 4) {
-    reply = 'Você está tomando meu tempo. Última chance: qual é exatamente a proposta?';
+    reply = L.pressed;
   }
 
   // Latência simulada para a UI mostrar o estado "pensando"

@@ -128,6 +128,7 @@ export type CallState =
   | 'speaking'
   | 'waiting_input'
   | 'ended'
+  | 'ended_empty'
   | 'evaluating'
   | 'scored'
   | 'error';

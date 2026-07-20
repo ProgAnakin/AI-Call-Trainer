@@ -31,6 +31,9 @@ export const it: typeof pt = {
   'briefing.voiceUnsupported': 'Voce non disponibile in questo browser (usa Chrome/Edge). Si continua via testo.',
   'briefing.startCall': 'Chiama ora',
   'briefing.minutes': '{m} min',
+  'briefing.voicePick': 'Voce del prospect (TTS)',
+  'briefing.voiceDefault': 'Voce predefinita del sistema',
+  'briefing.personality': 'Personalità',
 
   'call.listening': 'In ascolto... rilascia per inviare',
   'call.holdToTalk': 'Tieni premuto per parlare',
@@ -43,6 +46,9 @@ export const it: typeof pt = {
   'call.ended': 'Chiamata terminata',
   'call.evaluating': 'Valutazione della performance...',
   'call.error': 'Errore nella chiamata. Riprova.',
+  'call.limitReached':
+    'Limite giornaliero di allenamento raggiunto (protezione costi API). Torna domani!',
+  'call.endedEmpty': 'Chiamata terminata senza conversazione — niente da valutare.',
   'call.editHint': 'Modifica la trascrizione prima di inviare, se serve.',
 
   'score.title': 'Scorecard',
@@ -58,6 +64,7 @@ export const it: typeof pt = {
   'score.duration': 'Durata',
   'score.trainAgain': 'Allenati di nuovo',
   'score.backHome': 'Altri scenari',
+  'score.transcript': 'Trascrizione della call',
   'score.outcome.meeting_booked': 'Meeting fissato 🎉',
   'score.outcome.rejected': 'Il prospect ha riagganciato',
   'score.outcome.abandoned': 'Call abbandonata',
@@ -67,6 +74,7 @@ export const it: typeof pt = {
   'progress.avgScore': 'Media generale',
   'progress.streak': 'Streak',
   'progress.days': '{n} giorni',
+  'progress.daysLabel': 'giorni di fila',
   'progress.weekly': 'Evoluzione settimanale',
   'progress.byCriterion': 'Media per criterio',
   'progress.history': 'Storico sessioni',

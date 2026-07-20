@@ -153,6 +153,8 @@ export function useSpeech(lang: Language): UseSpeech {
           setSpeaking(false);
           resolve();
         };
+        // Fila pendente (fala anterior interrompida) trava o speak no Chrome.
+        if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
         setSpeaking(true);
         speechSynthesis.speak(utt);
       });

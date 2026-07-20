@@ -143,7 +143,12 @@ Frameworks **SPICED** e **MEDDIC** também estão definidos em `src/data/framewo
 
 Métricas objetivas calculadas em código (não pela IA): talk ratio
 (meta: rep ≤ 55% em discovery), duração vs. time limit, perguntas feitas
-e evolução histórica por semana.
+e evolução histórica por semana. A **nota geral é sempre recalculada no
+servidor** a partir das notas por critério × pesos do framework — a IA dá
+as notas e os comentários, a matemática é determinística.
+
+O scorecard também inclui o **transcript completo da call** (colapsável),
+para revisar cada fala junto com as citações do avaliador.
 
 ## Voz — notas de implementação
 
@@ -152,8 +157,10 @@ e evolução histórica por semana.
 - **Push-to-talk** (segure o botão ou a barra de espaço) em vez de reconhecimento
   contínuo — mais confiável com sotaque/ruído.
 - A transcrição aparece em tempo real e pode ser **editada antes de enviar**.
-- Vozes TTS variam por sistema operacional; a mais próxima do idioma do cenário é
-  escolhida automaticamente.
+- Vozes TTS variam por sistema operacional; no briefing dá para **escolher a voz**
+  do prospect entre as disponíveis para o idioma (a escolha fica salva por idioma).
+- Quando o prospect encerra a call, a avaliação só começa **depois** que o TTS
+  termina de falar a última frase.
 
 ## Personas seed
 

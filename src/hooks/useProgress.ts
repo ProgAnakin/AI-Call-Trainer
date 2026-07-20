@@ -19,15 +19,26 @@ export interface ProgressData {
   byCriterion: { key: string; avg: number }[];
 }
 
+/**
+ * Dia no fuso LOCAL (YYYY-MM-DD). Usar UTC aqui faria um treino às 22h
+ * contar como o dia seguinte e quebrar o streak.
+ */
+export function localDay(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function mondayOf(dateIso: string): string {
   const d = new Date(dateIso);
   const day = (d.getDay() + 6) % 7; // 0 = segunda
   d.setDate(d.getDate() - day);
-  return d.toISOString().slice(0, 10);
+  return localDay(d);
 }
 
 function dayOf(dateIso: string): string {
-  return new Date(dateIso).toISOString().slice(0, 10);
+  return localDay(new Date(dateIso));
 }
 
 export function computeStreak(sessionDays: string[], today = new Date()): number {
@@ -35,10 +46,10 @@ export function computeStreak(sessionDays: string[], today = new Date()): number
   let streak = 0;
   const cursor = new Date(today);
   // streak conta a partir de hoje (ou ontem, se hoje ainda não treinou)
-  if (!days.has(cursor.toISOString().slice(0, 10))) {
+  if (!days.has(localDay(cursor))) {
     cursor.setDate(cursor.getDate() - 1);
   }
-  while (days.has(cursor.toISOString().slice(0, 10))) {
+  while (days.has(localDay(cursor))) {
     streak++;
     cursor.setDate(cursor.getDate() - 1);
   }

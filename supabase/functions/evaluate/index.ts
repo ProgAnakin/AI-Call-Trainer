@@ -18,34 +18,58 @@ interface Body {
   success_criteria: string;
 }
 
-const CRITERIA: Record<Body['framework'], string[]> = {
-  basic: [
-    'abertura',
-    'descoberta',
-    'escuta_ativa',
-    'tratamento_objecoes',
-    'clareza_valor',
-    'proximo_passo',
-  ],
-  SPICED: ['situation', 'pain', 'impact', 'critical_event', 'decision'],
-  MEDDIC: [
-    'metrics',
-    'economic_buyer',
-    'decision_criteria',
-    'decision_process',
-    'identify_pain',
-    'champion',
-  ],
+/** Pesos por critério (%) — espelham src/data/frameworks.ts. */
+const WEIGHTS: Record<Body['framework'], Record<string, number>> = {
+  basic: {
+    abertura: 15,
+    descoberta: 25,
+    escuta_ativa: 15,
+    tratamento_objecoes: 20,
+    clareza_valor: 10,
+    proximo_passo: 15,
+  },
+  SPICED: { situation: 15, pain: 25, impact: 25, critical_event: 15, decision: 20 },
+  MEDDIC: {
+    metrics: 20,
+    economic_buyer: 15,
+    decision_criteria: 15,
+    decision_process: 15,
+    identify_pain: 20,
+    champion: 15,
+  },
 };
 
+function criteriaOf(framework: Body['framework']): string[] {
+  return Object.keys(WEIGHTS[framework] ?? WEIGHTS.basic);
+}
+
+/** Nota geral 0-100 recalculada aqui, determinística — não confiamos na do LLM. */
+function weightedOverall(
+  framework: Body['framework'],
+  scores: Record<string, { score: number }>,
+): number {
+  const weights = WEIGHTS[framework] ?? WEIGHTS.basic;
+  let total = 0;
+  let weightUsed = 0;
+  for (const [key, weight] of Object.entries(weights)) {
+    const s = scores[key];
+    if (s && Number.isFinite(s.score)) {
+      total += (s.score / 10) * weight;
+      weightUsed += weight;
+    }
+  }
+  return weightUsed === 0 ? 0 : Math.round((total / weightUsed) * 100);
+}
+
 function buildPrompt(body: Body): string {
-  const criteria = CRITERIA[body.framework] ?? CRITERIA.basic;
-  const scoresShape = criteria
-    .map((c) => `    "${c}": {"score": 0-10, "comment": "..."}`)
+  const weights = WEIGHTS[body.framework] ?? WEIGHTS.basic;
+  const scoresShape = Object.entries(weights)
+    .map(([c, w]) => `    "${c}": {"score": 0-10, "comment": "..."}  // peso ${w}%`)
     .join(',\n');
 
   return `Você é um coach de vendas sênior. Avalie a performance do REP neste transcript
 de ${body.call_type} usando o framework ${body.framework}.
+Os pesos de cada critério estão anotados no formato abaixo.
 Critério de sucesso da call: ${body.success_criteria}.
 Escreva os comentários em ${body.language}. Seja específico e cite o transcript.
 Responda APENAS com JSON válido, sem markdown, neste formato exato:
@@ -76,16 +100,14 @@ function parseEvaluation(raw: string, framework: Body['framework']): EvalResult 
   if (start < 0 || end <= start) throw new Error('no JSON object in response');
   const parsed = JSON.parse(raw.slice(start, end + 1)) as EvalResult;
 
-  const criteria = CRITERIA[framework] ?? CRITERIA.basic;
-  if (typeof parsed.overall_score !== 'number' || !parsed.scores) {
-    throw new Error('missing overall_score/scores');
-  }
-  for (const c of criteria) {
+  if (!parsed.scores) throw new Error('missing scores');
+  for (const c of criteriaOf(framework)) {
     const s = parsed.scores[c];
     if (!s || typeof s.score !== 'number') throw new Error(`missing criterion: ${c}`);
     s.score = Math.max(0, Math.min(10, Math.round(s.score)));
   }
-  parsed.overall_score = Math.max(0, Math.min(100, Math.round(parsed.overall_score)));
+  // Nota geral sempre ponderada pelos pesos do framework — consistente com a UI.
+  parsed.overall_score = weightedOverall(framework, parsed.scores);
   parsed.strengths = Array.isArray(parsed.strengths) ? parsed.strengths : [];
   parsed.improvements = Array.isArray(parsed.improvements) ? parsed.improvements : [];
   return parsed;

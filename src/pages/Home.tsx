@@ -47,6 +47,7 @@ export function Home() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge color="indigo">{t(`callType.${s.call_type}`)}</Badge>
                   <Badge>{product.name}</Badge>
+                  <Badge>⏱ {t('briefing.minutes', { m: Math.round(s.time_limit_seconds / 60) })}</Badge>
                   {s.custom && <Badge color="green">{t('library.customTag')}</Badge>}
                 </div>
 

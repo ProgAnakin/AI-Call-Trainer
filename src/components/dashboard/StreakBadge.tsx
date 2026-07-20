@@ -8,7 +8,7 @@ export function StreakBadge({ days }: { days: number }) {
       <span className="text-3xl">{days > 0 ? '🔥' : '💤'}</span>
       <div>
         <p className="font-mono text-2xl font-bold leading-none">{days}</p>
-        <p className="text-xs text-slate-500">{t('progress.days', { n: days }).replace(String(days), '').trim()}</p>
+        <p className="text-xs text-slate-500">{t('progress.daysLabel')}</p>
       </div>
     </div>
   );
