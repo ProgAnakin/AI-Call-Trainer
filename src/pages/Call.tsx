@@ -5,6 +5,7 @@ import type { SessionMode } from '@/types';
 import { getPersona, getProduct, getScenario } from '@/lib/storage';
 import { useCallSession } from '@/hooks/useCallSession';
 import { useSpeech } from '@/hooks/useSpeech';
+import { MOOD_EMOJI, moodLabelKey, pickMood } from '@/lib/moods';
 import {
   Badge,
   Button,
@@ -115,6 +116,7 @@ export function Call() {
 
   // ---------- Briefing ----------
   if (call.state === 'briefing') {
+    const mood = pickMood(scenario.id);
     const traits: { label: string; value: number }[] = [
       { label: t('form.skepticism'), value: persona.personality.skepticism },
       { label: t('form.patience'), value: persona.personality.patience },
@@ -123,6 +125,9 @@ export function Call() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-10">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <Link to="/" className="mb-3 inline-block text-xs text-slate-500 hover:text-slate-300">
+            ← {t('score.backHome')}
+          </Link>
           <h1 className="mb-6 text-2xl font-bold">{t('briefing.title')}</h1>
           <Card className="space-y-5">
             <div>
@@ -133,11 +138,14 @@ export function Call() {
                 {persona.name} — {persona.role} {LANGUAGE_FLAGS[scenario.language]}
               </p>
               <p className="mt-1 text-sm text-slate-400">{persona.company_profile}</p>
-              <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                 <Badge color="indigo">{t(`callType.${scenario.call_type}`)}</Badge>
                 <span className="flex items-center gap-2">
                   {t('home.difficulty')} <DifficultyDots level={scenario.difficulty} />
                 </span>
+                <Badge color="amber">
+                  {MOOD_EMOJI[mood]} {t(`briefing.mood`)}: {t(moodLabelKey(mood))}
+                </Badge>
               </div>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {traits.map((trait) => (

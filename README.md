@@ -209,6 +209,20 @@ perdidos**, **reescrita da abertura**, e **melhor / pior linha** — tudo com ci
 do transcript. O dashboard destaca o **critério mais fraco** para o rep saber onde focar.
 O scorecard também inclui o **transcript completo da call** (colapsável).
 
+### Objection Gauntlet — treino rápido de objeções
+
+Em `/drill`: uma rajada de objeções reais do produto, uma a uma. Você responde,
+recebe uma **nota instantânea** (reconhecer → explorar → responder) e vê a
+**resposta modelo** para comparar. Tudo **client-side** (custo de IA zero, feedback
+imediato — ideal para rajada) com recorde pessoal por produto. É o treino diário
+que um SDR realmente repete.
+
+### Humor do prospect
+
+Cada cenário tem um **humor** (apressado / desconfiado / curioso / cordial-mas-evasivo
+/ irritado), mostrado no briefing e injetado no prompt do prospect — um CEO apressado
+e um ops curioso mudam a call inteira.
+
 ## Voz — notas de implementação
 
 - `SpeechRecognition` só funciona bem em **Chrome/Edge** → detecção automática com

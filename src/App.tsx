@@ -8,11 +8,13 @@ import { Call } from '@/pages/Call';
 import { Scorecard } from '@/pages/Scorecard';
 import { Progress } from '@/pages/Progress';
 import { Library } from '@/pages/Library';
+import { Drill } from '@/pages/Drill';
 
 function Nav() {
   const { t, lang, setLang } = useT();
   const links = [
     { to: '/', label: t('nav.home') },
+    { to: '/drill', label: t('nav.drill') },
     { to: '/progress', label: t('nav.progress') },
     { to: '/library', label: t('nav.library') },
   ];
@@ -80,6 +82,7 @@ export default function App() {
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/drill" element={<Drill />} />
             <Route path="/call/:scenarioId" element={<Call />} />
             <Route path="/scorecard/:sessionId" element={<Scorecard />} />
             <Route path="/progress" element={<Progress />} />
