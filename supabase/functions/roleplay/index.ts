@@ -43,17 +43,50 @@ interface Body {
   persona: Persona;
   product: Product;
   scenario: Scenario;
+  mood?: string;
   history: { speaker: 'rep' | 'prospect'; content: string }[];
 }
 
-function buildSystemPrompt(persona: Persona, product: Product, scenario: Scenario): string {
+// Humor do prospect nesta call — dá realismo (ver src/lib/moods.ts no cliente).
+const MOOD_HINTS: Record<'pt' | 'it' | 'en', Record<string, string>> = {
+  pt: {
+    rushed: 'HUMOR: você está com muita pressa; apresse tudo e corte o vendedor se ele enrolar.',
+    skeptical: 'HUMOR: você está desconfiado; questione afirmações e peça provas concretas.',
+    curious: 'HUMOR: você está curioso e aberto a ouvir, mas ainda não convencido.',
+    friendly_evasive: 'HUMOR: você é cordial e simpático, mas evita se comprometer com qualquer coisa.',
+    annoyed: 'HUMOR: você está irritado por ter sido interrompido; demonstre impaciência.',
+  },
+  it: {
+    rushed: 'UMORE: hai molta fretta; accelera tutto e interrompi il venditore se gira intorno.',
+    skeptical: 'UMORE: sei diffidente; metti in dubbio le affermazioni e chiedi prove concrete.',
+    curious: 'UMORE: sei curioso e disposto ad ascoltare, ma non ancora convinto.',
+    friendly_evasive: 'UMORE: sei cordiale e simpatico, ma eviti di impegnarti in qualsiasi cosa.',
+    annoyed: 'UMORE: sei irritato di essere stato interrotto; mostra impazienza.',
+  },
+  en: {
+    rushed: 'MOOD: you are in a big hurry; rush everything and cut the rep off if they ramble.',
+    skeptical: 'MOOD: you are skeptical; question claims and ask for concrete proof.',
+    curious: 'MOOD: you are curious and willing to listen, but not yet convinced.',
+    friendly_evasive: 'MOOD: you are warm and friendly, but avoid committing to anything.',
+    annoyed: 'MOOD: you are annoyed at being interrupted; show impatience.',
+  },
+};
+
+function moodHint(language: string, mood?: string): string {
+  if (!mood) return '';
+  const fam = language.startsWith('it') ? 'it' : language.startsWith('en') ? 'en' : 'pt';
+  const hint = MOOD_HINTS[fam][mood];
+  return hint ? `\n${hint}` : '';
+}
+
+function buildSystemPrompt(persona: Persona, product: Product, scenario: Scenario, mood?: string): string {
   const p = persona.personality;
   return `Você é ${persona.name}, ${persona.role} em ${persona.company_profile}.
 Personalidade: ceticismo ${p.skepticism}/5, paciência ${p.patience}/5, fala ${p.talkativeness}/5.
 Você recebeu uma ${scenario.call_type === 'cold_call' ? 'cold call' : scenario.call_type} de um SDR vendendo ${product.name} (${product.one_liner}).
 Suas dores reais (não revele de graça): ${persona.pain_points.join('; ')}.
 Objeções que você levanta naturalmente: ${persona.hidden_objections.join('; ')}.
-Estágio de compra: ${persona.buying_stage}.
+Estágio de compra: ${persona.buying_stage}.${moodHint(scenario.language, mood)}
 
 REGRAS:
 - Responda SEMPRE em ${scenario.language}, em falas curtas (1-3 frases), como numa ligação real.
@@ -104,7 +137,7 @@ Deno.serve(async (req) => {
     }
 
     const reply = await callClaude({
-      system: buildSystemPrompt(persona, product, scenario),
+      system: buildSystemPrompt(persona, product, scenario, body.mood),
       messages,
       temperature: 0.8, // naturalidade
       maxTokens: 200, // falas curtas

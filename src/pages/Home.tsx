@@ -12,8 +12,18 @@ export function Home() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-2xl font-bold">{t('home.title')}</h1>
-      <p className="mb-6 mt-1 text-sm text-slate-400">{t('home.subtitle')}</p>
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{t('home.title')}</h1>
+          <p className="mt-1 text-sm text-slate-400">{t('home.subtitle')}</p>
+        </div>
+        <Link
+          to="/drill"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-surface-raised px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:border-accent hover:text-white"
+        >
+          🥊 {t('home.quickDrill')} →
+        </Link>
+      </div>
 
       {scenarios.length === 0 && <p className="text-slate-500">{t('home.empty')}</p>}
 

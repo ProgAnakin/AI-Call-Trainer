@@ -36,6 +36,8 @@ export interface RoleplayPayload {
   persona: Persona;
   product: Product;
   history: Pick<Turn, 'speaker' | 'content'>[];
+  /** Humor do prospect nesta call (ver lib/moods). */
+  mood?: string;
 }
 
 /**

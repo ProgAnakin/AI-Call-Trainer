@@ -12,6 +12,7 @@ import type {
 } from '@/types';
 import { evaluateCall, roleplayTurn } from '@/lib/api';
 import { frameworkForCallType } from '@/data/frameworks';
+import { pickMood } from '@/lib/moods';
 import {
   createSession,
   finishSession,
@@ -167,6 +168,7 @@ export function useCallSession(
           scenario,
           persona,
           product,
+          mood: pickMood(scenario.id),
           history: turnsRef.current.map(({ speaker, content: c }) => ({ speaker, content: c })),
         });
 
