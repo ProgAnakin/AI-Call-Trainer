@@ -9,6 +9,11 @@ export interface WeeklyPoint {
   sessions: number;
 }
 
+export interface CriterionAvg {
+  key: string;
+  avg: number;
+}
+
 export interface ProgressData {
   sessions: Session[];
   evaluations: Evaluation[];
@@ -16,7 +21,13 @@ export interface ProgressData {
   avgOverall: number;
   streakDays: number;
   weekly: WeeklyPoint[];
-  byCriterion: { key: string; avg: number }[];
+  byCriterion: CriterionAvg[];
+  /** Fração de calls (com desfecho) que agendaram meeting — a métrica-norte do SDR. */
+  meetingRate: number;
+  meetingBooked: number;
+  outcomeCount: number;
+  /** Critério com a menor média — sugestão de foco. null se dados insuficientes. */
+  weakestCriterion: CriterionAvg | null;
 }
 
 /**
@@ -93,10 +104,21 @@ export function useProgress(): ProgressData {
         critAgg.set(key, agg);
       }
     }
-    const byCriterion = [...critAgg.entries()].map(([key, { total, n }]) => ({
+    const byCriterion: CriterionAvg[] = [...critAgg.entries()].map(([key, { total, n }]) => ({
       key,
       avg: Math.round((total / n) * 10) / 10,
     }));
+
+    // Taxa de meeting agendado — só conta calls que tiveram um desfecho.
+    const withOutcome = sessions.filter((s) => s.outcome);
+    const meetingBooked = withOutcome.filter((s) => s.outcome === 'meeting_booked').length;
+    const meetingRate = withOutcome.length === 0 ? 0 : meetingBooked / withOutcome.length;
+
+    // Critério mais fraco (com pelo menos 2 avaliações no total, para ter sinal).
+    const weakestCriterion =
+      evaluations.length >= 2 && byCriterion.length > 0
+        ? byCriterion.reduce((min, c) => (c.avg < min.avg ? c : min))
+        : null;
 
     return {
       sessions,
@@ -106,6 +128,10 @@ export function useProgress(): ProgressData {
       streakDays,
       weekly,
       byCriterion,
+      meetingRate,
+      meetingBooked,
+      outcomeCount: withOutcome.length,
+      weakestCriterion,
     };
   }, []);
 }

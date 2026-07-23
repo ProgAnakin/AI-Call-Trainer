@@ -1,4 +1,4 @@
-import type { FrameworkId } from '@/types';
+import type { CallType, FrameworkId } from '@/types';
 
 export interface CriterionDef {
   key: string;
@@ -207,6 +207,23 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkDef> = {
 
 export function getFramework(id: FrameworkId): FrameworkDef {
   return FRAMEWORKS[id] ?? FRAMEWORKS.basic;
+}
+
+/**
+ * Rubrica recomendada por tipo de call — uma cold call e uma negociação são
+ * jogos diferentes e não devem ser avaliadas pela mesma régua.
+ */
+export function frameworkForCallType(callType: CallType): FrameworkId {
+  switch (callType) {
+    case 'discovery':
+      return 'SPICED';
+    case 'negotiation':
+      return 'MEDDIC';
+    case 'cold_call':
+    case 'demo':
+    default:
+      return 'basic';
+  }
 }
 
 /** Nota geral 0-100 ponderada pelos pesos do framework. */

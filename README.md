@@ -181,16 +181,33 @@ supabase/
 | Clareza de valor | 10% | Conectou feature → dor específica da persona |
 | Próximo passo | 15% | Pediu o meeting? Data/hora concreta? |
 
-Frameworks **SPICED** e **MEDDIC** também estão definidos em `src/data/frameworks.ts`.
+Frameworks **SPICED** e **MEDDIC** também estão definidos em `src/data/frameworks.ts`,
+e a rubrica é **escolhida automaticamente pelo tipo de call** (`frameworkForCallType`):
+cold call → Fundamentos, discovery → SPICED, negociação → MEDDIC. Uma cold call e uma
+negociação são jogos diferentes e não devem ser avaliadas pela mesma régua.
 
-Métricas objetivas calculadas em código (não pela IA): talk ratio
-(meta: rep ≤ 55% em discovery), duração vs. time limit, perguntas feitas
-e evolução histórica por semana. A **nota geral é sempre recalculada no
-servidor** a partir das notas por critério × pesos do framework — a IA dá
-as notas e os comentários, a matemática é determinística.
+### Conversation intelligence — métricas objetivas (custo de IA zero)
 
-O scorecard também inclui o **transcript completo da call** (colapsável),
-para revisar cada fala junto com as citações do avaliador.
+Calculadas em código a partir do transcript + timestamps (não pela IA), no estilo
+Gong/Chorus:
+
+- **Talk ratio** (meta: rep ≤ 55% em discovery) e **maior monólogo do rep** (meta < 150 palavras)
+- **Ritmo** em palavras/min (só no modo voz)
+- **Perguntas abertas vs. fechadas** e **tempo até a 1ª pergunta**
+- **Muletas de linguagem** por idioma ("tipo", "né", "cioè", "like"...)
+- **Próximo passo concreto** detectado (dia/hora)
+- Duração vs. time limit; **taxa de meeting agendado** e evolução histórica no dashboard
+
+A **nota geral é sempre recalculada no servidor** a partir das notas por critério ×
+pesos do framework — a IA dá as notas e os comentários, a matemática é determinística.
+
+### Feedback cirúrgico do avaliador
+
+Além das notas por critério, o scorecard traz: **foco único para a próxima call**,
+**mapa de objeções** (ignorou / rebateu na hora / explorou), **sinais de compra
+perdidos**, **reescrita da abertura**, e **melhor / pior linha** — tudo com citação
+do transcript. O dashboard destaca o **critério mais fraco** para o rep saber onde focar.
+O scorecard também inclui o **transcript completo da call** (colapsável).
 
 ## Voz — notas de implementação
 

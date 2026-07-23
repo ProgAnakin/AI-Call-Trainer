@@ -11,6 +11,7 @@ import type {
   Turn,
 } from '@/types';
 import { evaluateCall, roleplayTurn } from '@/lib/api';
+import { frameworkForCallType } from '@/data/frameworks';
 import {
   createSession,
   finishSession,
@@ -85,7 +86,7 @@ export function useCallSession(
         const draft = await evaluateCall({
           transcript: turnsRef.current.map(({ speaker, content }) => ({ speaker, content })),
           call_type: scenario.call_type,
-          framework: 'basic',
+          framework: frameworkForCallType(scenario.call_type),
           language: scenario.language,
           success_criteria: scenario.success_criteria,
         });

@@ -10,7 +10,7 @@ import type {
 } from '@/types';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { getDeviceId, isSupabaseConfigured, supabase } from './supabase';
-import { computeMetrics, formatTalkRatio } from './metrics';
+import { computeMetrics, formatTalkRatio, langFamilyOf } from './metrics';
 import { weightedOverall, getFramework } from '@/data/frameworks';
 
 /** Sinais que o prospect emite (removidos antes de exibir/falar). */
@@ -103,6 +103,12 @@ export async function evaluateCall(payload: EvaluatePayload): Promise<Evaluation
       improvements: d.improvements ?? [],
       framework: payload.framework,
       talk_ratio_estimate: d.talk_ratio_estimate,
+      focus_next: d.focus_next,
+      objection_handling: d.objection_handling,
+      missed_signals: d.missed_signals,
+      opener_rewrite: d.opener_rewrite,
+      best_line: d.best_line,
+      worst_line: d.worst_line,
     };
   }
   return demoEvaluator(payload);
@@ -190,10 +196,52 @@ function demoProspect(payload: RoleplayPayload): Promise<RoleplayResult> {
   return new Promise((resolve) => setTimeout(() => resolve(parseReply(reply)), 700));
 }
 
+// Textos localizados do feedback demo (o feedback real vem do avaliador Claude).
+const DEMO_FB = {
+  pt: {
+    demoComment: 'Nota demo (sem IA), derivada de métricas objetivas.',
+    strengthQuestions: 'Fez perguntas em vez de só pitchar.',
+    focusTalk: 'Deixe o prospect falar mais — você dominou a conversa.',
+    focusQuestions: 'Faça mais perguntas abertas antes de propor a solução.',
+    focusNextStep: 'Feche pedindo um próximo passo com dia e hora concretos.',
+    focusPain: 'Aprofunde a dor: pergunte o impacto em dinheiro ou tempo.',
+    objHandled: 'Você explorou a objeção com uma pergunta antes de responder.',
+    objRebutted: 'Você rebateu na hora — tente primeiro "me conta mais sobre isso".',
+    objIgnored: 'Objeção ficou sem resposta.',
+    demoNote: 'Modo demo: o feedback qualitativo detalhado vem do avaliador Claude.',
+  },
+  it: {
+    demoComment: 'Voto demo (senza IA), derivato da metriche oggettive.',
+    strengthQuestions: 'Ha fatto domande invece di solo pitchare.',
+    focusTalk: 'Lascia parlare di più il prospect — hai dominato la conversazione.',
+    focusQuestions: 'Fai più domande aperte prima di proporre la soluzione.',
+    focusNextStep: 'Chiudi chiedendo un prossimo passo con data e ora concrete.',
+    focusPain: 'Approfondisci il dolore: chiedi l’impatto in denaro o tempo.',
+    objHandled: 'Hai esplorato l’obiezione con una domanda prima di rispondere.',
+    objRebutted: 'Hai ribattuto subito — prova prima "mi racconti di più".',
+    objIgnored: 'Obiezione rimasta senza risposta.',
+    demoNote: 'Modalità demo: il feedback qualitativo dettagliato viene dal valutatore Claude.',
+  },
+  en: {
+    demoComment: 'Demo score (no AI), derived from objective metrics.',
+    strengthQuestions: 'Asked questions instead of only pitching.',
+    focusTalk: 'Let the prospect talk more — you dominated the conversation.',
+    focusQuestions: 'Ask more open questions before proposing the solution.',
+    focusNextStep: 'Close by asking for a next step with a concrete day and time.',
+    focusPain: 'Dig into the pain: ask for the impact in money or time.',
+    objHandled: 'You explored the objection with a question before answering.',
+    objRebutted: 'You rebutted instantly — try "tell me more about that" first.',
+    objIgnored: 'Objection left unanswered.',
+    demoNote: 'Demo mode: the detailed qualitative feedback comes from the Claude evaluator.',
+  },
+} as const;
+
 function demoEvaluator(payload: EvaluatePayload): Promise<EvaluationDraft> {
-  const { transcript, framework } = payload;
+  const { transcript, framework, language } = payload;
+  const fam = langFamilyOf(language);
+  const fb = DEMO_FB[fam];
   const now = new Date().toISOString();
-  const metrics = computeMetrics(transcript, now, now);
+  const metrics = computeMetrics(transcript, now, now, language);
   const fw = getFramework(framework);
   const repTurns = transcript.filter((t) => t.speaker === 'rep');
   const questionRate = repTurns.length === 0 ? 0 : metrics.questionsAsked / repTurns.length;
@@ -209,34 +257,57 @@ function demoEvaluator(payload: EvaluatePayload): Promise<EvaluationDraft> {
     if (c.key === 'descoberta' || c.key === 'situation' || c.key === 'metrics') {
       score = Math.min(9, Math.round(3 + questionRate * 6));
     }
-    scores[c.key] = {
-      score,
-      comment:
-        'Avaliação demo (sem IA): nota derivada de métricas objetivas. Configure o Supabase + Claude para feedback real.',
-    };
+    scores[c.key] = { score, comment: fb.demoComment };
   }
 
+  // Mapa de objeções (heurística demo): cada fala do prospect após a saudação é
+  // tratada como objeção; a qualidade vem da fala seguinte do rep.
+  const objection_handling: EvaluationDraft['objection_handling'] = [];
+  for (let i = 1; i < transcript.length && objection_handling.length < 3; i++) {
+    if (transcript[i].speaker !== 'prospect') continue;
+    const next = transcript[i + 1];
+    let quality: 'ignored' | 'rebutted' | 'handled';
+    let comment: string;
+    if (!next || next.speaker !== 'rep') {
+      quality = 'ignored';
+      comment = fb.objIgnored;
+    } else if (next.content.includes('?')) {
+      quality = 'handled';
+      comment = fb.objHandled;
+    } else {
+      quality = 'rebutted';
+      comment = fb.objRebutted;
+    }
+    objection_handling.push({ objection: transcript[i].content, quality, comment });
+  }
+
+  // Foco único para a próxima call — o primeiro problema que aparecer.
+  const focus_next = !talkOk
+    ? fb.focusTalk
+    : metrics.openQuestions < 2
+      ? fb.focusQuestions
+      : !metrics.nextStepDetected
+        ? fb.focusNextStep
+        : fb.focusPain;
+
+  // Melhor / pior linha derivadas das métricas.
   const firstQuestion = repTurns.find((t) => t.content.includes('?'))?.content;
+  const longestTurn = repTurns.reduce(
+    (max, t) => (t.content.split(/\s+/).length > max.split(/\s+/).length ? t.content : max),
+    '',
+  );
+
   const draft: EvaluationDraft = {
     overall_score: weightedOverall(framework, scores),
     scores,
-    strengths: firstQuestion
-      ? [{ point: 'Fez perguntas em vez de só pitchar.', quote: firstQuestion }]
-      : [],
-    improvements: [
-      {
-        point: talkOk
-          ? 'Continue deixando o prospect falar — seu talk ratio está saudável.'
-          : 'Você falou demais. Meta: rep ≤ 55% das palavras em discovery.',
-        instead_try: 'Depois de cada resposta do prospect, aprofunde com "Como assim?" ou "Me conta mais".',
-      },
-      {
-        point: 'Modo demo ativo: o feedback qualitativo real vem do avaliador Claude.',
-        instead_try: 'Configure VITE_SUPABASE_URL/ANON_KEY e faça deploy das Edge Functions.',
-      },
-    ],
+    strengths: firstQuestion ? [{ point: fb.strengthQuestions, quote: firstQuestion }] : [],
+    improvements: [{ point: fb.demoNote, instead_try: focus_next }],
     framework,
     talk_ratio_estimate: formatTalkRatio(metrics.talkRatioRep),
+    focus_next,
+    objection_handling,
+    best_line: firstQuestion,
+    worst_line: longestTurn && longestTurn.split(/\s+/).length >= 25 ? longestTurn : undefined,
   };
   return new Promise((resolve) => setTimeout(() => resolve(draft), 900));
 }
