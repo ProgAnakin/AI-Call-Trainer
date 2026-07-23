@@ -100,6 +100,21 @@ export interface Improvement {
   instead_try: string;
 }
 
+/** Como o rep tratou uma objeção levantada pelo prospect. */
+export type ObjectionQuality = 'ignored' | 'rebutted' | 'handled';
+
+export interface ObjectionHandling {
+  objection: string;
+  quality: ObjectionQuality;
+  comment: string;
+}
+
+/** Momento em que o prospect abriu uma porta e o rep não capitalizou. */
+export interface MissedSignal {
+  quote: string;
+  note: string;
+}
+
 export interface Evaluation {
   id: string;
   session_id: string;
@@ -110,6 +125,13 @@ export interface Evaluation {
   framework: FrameworkId;
   talk_ratio_estimate?: string;
   created_at: string;
+  // Campos qualitativos avançados (opcionais — avaliações antigas não os têm).
+  focus_next?: string;
+  objection_handling?: ObjectionHandling[];
+  missed_signals?: MissedSignal[];
+  opener_rewrite?: string;
+  best_line?: string;
+  worst_line?: string;
 }
 
 export interface ObjectiveMetrics {
@@ -118,6 +140,18 @@ export interface ObjectiveMetrics {
   prospectWords: number;
   questionsAsked: number;
   durationSeconds: number;
+  /** Palavras no maior turno do rep — proxy de "discursou demais". */
+  longestRepMonologue: number;
+  /** Ritmo de fala (palavras/min). null quando a duração é curta demais (ex.: texto). */
+  wordsPerMinute: number | null;
+  openQuestions: number;
+  closedQuestions: number;
+  /** Segundos até a 1ª pergunta do rep. null sem timestamps (ex.: modo demo). */
+  timeToFirstQuestionSeconds: number | null;
+  /** Muletas de linguagem nos turnos do rep. */
+  fillerCount: number;
+  /** Rep marcou um próximo passo concreto (dia/hora)? */
+  nextStepDetected: boolean;
 }
 
 export type CallState =

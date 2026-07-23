@@ -31,13 +31,22 @@ export function Progress() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold">{t('progress.title')}</h1>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card className="flex items-center justify-between">
           <div>
             <p className="font-mono text-2xl font-bold">{data.totalSessions}</p>
             <p className="text-xs text-slate-500">{t('progress.sessions')}</p>
           </div>
           <span className="text-3xl">📞</span>
+        </Card>
+        <Card className="flex items-center justify-between">
+          <div>
+            <p className="font-mono text-2xl font-bold text-emerald-300">
+              {Math.round(data.meetingRate * 100)}%
+            </p>
+            <p className="text-xs text-slate-500">{t('progress.meetingRate')}</p>
+          </div>
+          <span className="text-3xl">📅</span>
         </Card>
         <Card className="flex items-center justify-between">
           <div>
@@ -50,6 +59,26 @@ export function Progress() {
           <StreakBadge days={data.streakDays} />
         </Card>
       </div>
+
+      {data.weakestCriterion && (
+        <Card className="mb-6 border-amber-900/50 bg-amber-950/10">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">
+                ↯ {t('progress.weakest')}
+              </p>
+              <p className="mt-1 text-lg font-semibold text-slate-100">
+                {criterionLabel(data.weakestCriterion.key)}{' '}
+                <span className="font-mono text-sm text-amber-400">
+                  {data.weakestCriterion.avg}/10
+                </span>
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">{t('progress.weakestHint')}</p>
+            </div>
+            <span className="text-3xl">🎯</span>
+          </div>
+        </Card>
+      )}
 
       {data.weekly.length > 0 && (
         <Card className="mb-6">

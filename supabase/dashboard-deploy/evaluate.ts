@@ -190,10 +190,22 @@ ${scoresShape}
   },
   "strengths": [{"point": "...", "quote": "citação literal do transcript"}],
   "improvements": [{"point": "...", "instead_try": "reformulação sugerida"}],
-  "talk_ratio_estimate": "rep 60% / prospect 40%"
+  "talk_ratio_estimate": "rep 60% / prospect 40%",
+  "focus_next": "a única coisa mais importante para o rep focar na próxima call",
+  "objection_handling": [{"objection": "objeção que o prospect levantou", "quality": "ignored|rebutted|handled", "comment": "como o rep tratou"}],
+  "missed_signals": [{"quote": "fala do prospect que era um sinal de compra", "note": "o que o rep deveria ter feito"}],
+  "opener_rewrite": "reescreva os primeiros 30s do rep de forma mais forte",
+  "best_line": "melhor fala do rep (citação literal)",
+  "worst_line": "fala mais fraca do rep (citação literal)"
 }
-Regras: 2-3 strengths e 2-3 improvements. Notas honestas — 10 é raro.`;
+Regras:
+- 2-3 strengths e 2-3 improvements. Notas honestas — 10 é raro.
+- objection_handling: uma entrada por objeção real que o prospect levantou. quality = "ignored" (rep não respondeu), "rebutted" (rebateu na hora sem explorar) ou "handled" (reconheceu → explorou → respondeu). [] se não houve objeção.
+- missed_signals: 0-2 momentos em que o prospect abriu uma porta e o rep não capitalizou. [] se não houver.
+- focus_next: a mudança de maior impacto para a próxima call, em uma frase.`;
 }
+
+const OBJECTION_QUALITIES = ['ignored', 'rebutted', 'handled'] as const;
 
 interface EvalResult {
   overall_score: number;
@@ -201,6 +213,12 @@ interface EvalResult {
   strengths: { point: string; quote: string }[];
   improvements: { point: string; instead_try: string }[];
   talk_ratio_estimate?: string;
+  focus_next?: string;
+  objection_handling?: { objection: string; quality: string; comment: string }[];
+  missed_signals?: { quote: string; note: string }[];
+  opener_rewrite?: string;
+  best_line?: string;
+  worst_line?: string;
 }
 
 function parseEvaluation(raw: string, framework: Body['framework']): EvalResult {
@@ -218,6 +236,19 @@ function parseEvaluation(raw: string, framework: Body['framework']): EvalResult 
   parsed.overall_score = weightedOverall(framework, parsed.scores);
   parsed.strengths = Array.isArray(parsed.strengths) ? parsed.strengths : [];
   parsed.improvements = Array.isArray(parsed.improvements) ? parsed.improvements : [];
+  parsed.objection_handling = Array.isArray(parsed.objection_handling)
+    ? parsed.objection_handling
+        .filter((o) => o && typeof o.objection === 'string')
+        .map((o) => ({
+          ...o,
+          quality: (OBJECTION_QUALITIES as readonly string[]).includes(o.quality)
+            ? o.quality
+            : 'rebutted',
+        }))
+    : [];
+  parsed.missed_signals = Array.isArray(parsed.missed_signals)
+    ? parsed.missed_signals.filter((s) => s && typeof s.quote === 'string')
+    : [];
   return parsed;
 }
 
