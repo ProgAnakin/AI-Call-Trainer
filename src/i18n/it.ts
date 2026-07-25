@@ -7,6 +7,15 @@ export const it: typeof pt = {
   'nav.library': 'Libreria',
   'app.tagline': 'Allena le tue cold call con un prospect IA. Ricevi uno scorecard vero.',
   'app.demoBadge': 'Modalità demo — senza IA',
+  'onboarding.title': 'Benvenuto in AI Call Trainer',
+  'onboarding.subtitle': 'Allena le cold call senza bruciare lead veri. Bastano 3 minuti.',
+  'onboarding.step1Title': '1. Scegli uno scenario',
+  'onboarding.step1Body': 'Una persona (con umore e obiezioni proprie), un prodotto e un tipo di call.',
+  'onboarding.step2Title': '2. Fai la call',
+  'onboarding.step2Body': 'A voce (Chrome/Edge) o per iscritto. Il prospect risponde e resiste come nella realtà.',
+  'onboarding.step3Title': '3. Ricevi lo scorecard',
+  'onboarding.step3Body': 'Voto per criterio, talk ratio, gestione obiezioni e un focus per la prossima call.',
+  'onboarding.cta': 'Inizia ad allenarti',
   'app.demoTooltip':
     'Supabase non configurato: prospect e valutazione sono simulati. Vedi il README per collegare Claude.',
 
@@ -57,6 +66,10 @@ export const it: typeof pt = {
   'call.limitReached':
     'Limite giornaliero di allenamento raggiunto (protezione costi API). Torna domani!',
   'call.endedEmpty': 'Chiamata terminata senza conversazione — niente da valutare.',
+  'call.outcomeTitle': 'Come è finita la call?',
+  'call.outcomeHint': 'Alimenta il tuo tasso di meeting nella dashboard.',
+  'call.outcomeRejected': 'Non è andata avanti / ha rifiutato',
+  'call.outcomeAbandoned': 'Ho solo chiuso l’allenamento',
   'call.editHint': 'Modifica la trascrizione prima di inviare, se serve.',
 
   'score.title': 'Scorecard',
@@ -90,6 +103,17 @@ export const it: typeof pt = {
   'score.openerRewrite': 'La tua apertura, riscritta',
   'score.bestLine': 'Momento migliore',
   'score.worstLine': 'Da evitare',
+  'score.demoNotice':
+    'I voti derivano dalle metriche oggettive di questa call. Collega Claude (vedi README) per il feedback qualitativo di un coach.',
+
+  // Dati / backup
+  'data.title': 'I tuoi dati',
+  'data.hint': 'I progressi restano in questo browser. Esporta per analizzarli o portarli su un altro dispositivo.',
+  'data.exportCsv': 'Esporta CSV',
+  'data.exportBackup': 'Backup (JSON)',
+  'data.import': 'Ripristina backup',
+  'data.imported': 'Backup ripristinato: {n} nuove sessioni.',
+  'data.importError': 'File non valido — usa un backup esportato da questa app.',
   'score.outcome.meeting_booked': 'Meeting fissato 🎉',
   'score.outcome.rejected': 'Il prospect ha riagganciato',
   'score.outcome.abandoned': 'Call abbandonata',

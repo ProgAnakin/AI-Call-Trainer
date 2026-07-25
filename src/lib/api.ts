@@ -11,6 +11,7 @@ import type {
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { getDeviceId, isSupabaseConfigured, supabase } from './supabase';
 import { computeMetrics, formatTalkRatio, langFamilyOf } from './metrics';
+import { TARGETS } from './thresholds';
 import { weightedOverall, getFramework } from '@/data/frameworks';
 
 /** Sinais que o prospect emite (removidos antes de exibir/falar). */
@@ -201,7 +202,7 @@ function demoProspect(payload: RoleplayPayload): Promise<RoleplayResult> {
 // Textos localizados do feedback demo (o feedback real vem do avaliador Claude).
 const DEMO_FB = {
   pt: {
-    demoComment: 'Nota demo (sem IA), derivada de métricas objetivas.',
+    demoComment: 'Derivado das métricas objetivas desta call.',
     strengthQuestions: 'Fez perguntas em vez de só pitchar.',
     focusTalk: 'Deixe o prospect falar mais — você dominou a conversa.',
     focusQuestions: 'Faça mais perguntas abertas antes de propor a solução.',
@@ -210,10 +211,18 @@ const DEMO_FB = {
     objHandled: 'Você explorou a objeção com uma pergunta antes de responder.',
     objRebutted: 'Você rebateu na hora — tente primeiro "me conta mais sobre isso".',
     objIgnored: 'Objeção ficou sem resposta.',
-    demoNote: 'Modo demo: o feedback qualitativo detalhado vem do avaliador Claude.',
+    impTalk: 'Você falou mais do que o prospect.',
+    impTalkTry: 'Depois de cada resposta dele, devolva com "como assim?" em vez de emendar.',
+    impQuestions: 'Faltaram perguntas abertas — a call ficou mais pitch que descoberta.',
+    impQuestionsTry: 'Abra com "como", "o que" ou "me conta": puxam narrativa, não um sim/não.',
+    impNextStep: 'A call terminou sem um próximo passo concreto.',
+    impNextStepTry: 'Feche propondo dia e hora: "quinta às 10h funciona?".',
+    impMonologue: 'Um dos seus turnos virou monólogo.',
+    impMonologueTry: 'Corte em blocos curtos e devolva a palavra com uma pergunta.',
+    impSolid: 'Fundamentos no lugar — agora aprofunde o impacto da dor.',
   },
   it: {
-    demoComment: 'Voto demo (senza IA), derivato da metriche oggettive.',
+    demoComment: 'Derivato dalle metriche oggettive di questa call.',
     strengthQuestions: 'Ha fatto domande invece di solo pitchare.',
     focusTalk: 'Lascia parlare di più il prospect — hai dominato la conversazione.',
     focusQuestions: 'Fai più domande aperte prima di proporre la soluzione.',
@@ -222,10 +231,18 @@ const DEMO_FB = {
     objHandled: 'Hai esplorato l’obiezione con una domanda prima di rispondere.',
     objRebutted: 'Hai ribattuto subito — prova prima "mi racconti di più".',
     objIgnored: 'Obiezione rimasta senza risposta.',
-    demoNote: 'Modalità demo: il feedback qualitativo dettagliato viene dal valutatore Claude.',
+    impTalk: 'Hai parlato più del prospect.',
+    impTalkTry: 'Dopo ogni sua risposta rilancia con "in che senso?" invece di proseguire.',
+    impQuestions: 'Sono mancate domande aperte — più pitch che discovery.',
+    impQuestionsTry: 'Apri con "come", "cosa" o "mi racconti": tirano fuori il racconto, non un sì/no.',
+    impNextStep: 'La call è finita senza un prossimo passo concreto.',
+    impNextStepTry: 'Chiudi proponendo giorno e ora: "giovedì alle 10 funziona?".',
+    impMonologue: 'Uno dei tuoi turni è diventato un monologo.',
+    impMonologueTry: 'Spezza in blocchi brevi e ridai la parola con una domanda.',
+    impSolid: 'Fondamentali a posto — ora approfondisci l’impatto del dolore.',
   },
   en: {
-    demoComment: 'Demo score (no AI), derived from objective metrics.',
+    demoComment: 'Derived from this call’s objective metrics.',
     strengthQuestions: 'Asked questions instead of only pitching.',
     focusTalk: 'Let the prospect talk more — you dominated the conversation.',
     focusQuestions: 'Ask more open questions before proposing the solution.',
@@ -234,7 +251,15 @@ const DEMO_FB = {
     objHandled: 'You explored the objection with a question before answering.',
     objRebutted: 'You rebutted instantly — try "tell me more about that" first.',
     objIgnored: 'Objection left unanswered.',
-    demoNote: 'Demo mode: the detailed qualitative feedback comes from the Claude evaluator.',
+    impTalk: 'You spoke more than the prospect did.',
+    impTalkTry: 'After each of their answers, come back with "how so?" instead of carrying on.',
+    impQuestions: 'Not enough open questions — this ran more pitch than discovery.',
+    impQuestionsTry: 'Open with "how", "what" or "tell me": they pull a story, not a yes/no.',
+    impNextStep: 'The call ended without a concrete next step.',
+    impNextStepTry: 'Close by proposing a day and time: "does Thursday at 10 work?".',
+    impMonologue: 'One of your turns turned into a monologue.',
+    impMonologueTry: 'Break it into short beats and hand the floor back with a question.',
+    impSolid: 'Fundamentals are in place — now dig into the impact of the pain.',
   },
 } as const;
 
@@ -247,7 +272,7 @@ function demoEvaluator(payload: EvaluatePayload): Promise<EvaluationDraft> {
   const fw = getFramework(framework);
   const repTurns = transcript.filter((t) => t.speaker === 'rep');
   const questionRate = repTurns.length === 0 ? 0 : metrics.questionsAsked / repTurns.length;
-  const talkOk = metrics.talkRatioRep <= 0.55;
+  const talkOk = metrics.talkRatioRep <= TARGETS.talkRatioRep;
 
   const base = Math.min(9, 3 + metrics.questionsAsked); // mais perguntas ⇒ melhor no demo
   const scores: Evaluation['scores'] = {};
@@ -286,7 +311,7 @@ function demoEvaluator(payload: EvaluatePayload): Promise<EvaluationDraft> {
   // Foco único para a próxima call — o primeiro problema que aparecer.
   const focus_next = !talkOk
     ? fb.focusTalk
-    : metrics.openQuestions < 2
+    : metrics.openQuestions < TARGETS.openQuestions
       ? fb.focusQuestions
       : !metrics.nextStepDetected
         ? fb.focusNextStep
@@ -299,11 +324,28 @@ function demoEvaluator(payload: EvaluatePayload): Promise<EvaluationDraft> {
     '',
   );
 
+  // Melhorias derivadas das métricas que realmente ficaram fora da meta — o
+  // aviso de "modo demo" vive no banner do scorecard, não ocupa espaço aqui.
+  const improvements: EvaluationDraft['improvements'] = [];
+  if (!talkOk) improvements.push({ point: fb.impTalk, instead_try: fb.impTalkTry });
+  if (metrics.openQuestions < TARGETS.openQuestions) {
+    improvements.push({ point: fb.impQuestions, instead_try: fb.impQuestionsTry });
+  }
+  if (!metrics.nextStepDetected) {
+    improvements.push({ point: fb.impNextStep, instead_try: fb.impNextStepTry });
+  }
+  if (metrics.longestRepMonologue > TARGETS.longestMonologue) {
+    improvements.push({ point: fb.impMonologue, instead_try: fb.impMonologueTry });
+  }
+  if (improvements.length === 0) {
+    improvements.push({ point: fb.impSolid, instead_try: fb.focusPain });
+  }
+
   const draft: EvaluationDraft = {
     overall_score: weightedOverall(framework, scores),
     scores,
     strengths: firstQuestion ? [{ point: fb.strengthQuestions, quote: firstQuestion }] : [],
-    improvements: [{ point: fb.demoNote, instead_try: focus_next }],
+    improvements: improvements.slice(0, 3),
     framework,
     talk_ratio_estimate: formatTalkRatio(metrics.talkRatioRep),
     focus_next,

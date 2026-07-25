@@ -161,6 +161,8 @@ export type CallState =
   | 'processing'
   | 'speaking'
   | 'waiting_input'
+  /** Rep hung up: asking how the call actually ended before evaluating. */
+  | 'confirming_outcome'
   | 'ended'
   | 'ended_empty'
   | 'evaluating'

@@ -9,6 +9,7 @@ import { Scorecard } from '@/pages/Scorecard';
 import { Progress } from '@/pages/Progress';
 import { Library } from '@/pages/Library';
 import { Drill } from '@/pages/Drill';
+import { Onboarding } from '@/components/Onboarding';
 
 function Nav() {
   const { t, lang, setLang } = useT();
@@ -78,6 +79,7 @@ export default function App() {
   return (
     <I18nProvider>
       <BrowserRouter>
+        <Onboarding />
         <Nav />
         <main>
           <Routes>

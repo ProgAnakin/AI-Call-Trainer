@@ -7,6 +7,15 @@ export const en: typeof pt = {
   'nav.library': 'Library',
   'app.tagline': 'Practice cold calls against an AI prospect. Get a real scorecard.',
   'app.demoBadge': 'Demo mode — no AI',
+  'onboarding.title': 'Welcome to AI Call Trainer',
+  'onboarding.subtitle': 'Practise cold calls without burning real leads. Takes 3 minutes.',
+  'onboarding.step1Title': '1. Pick a scenario',
+  'onboarding.step1Body': 'A persona (with their own mood and objections), a product and a call type.',
+  'onboarding.step2Title': '2. Make the call',
+  'onboarding.step2Body': 'By voice (Chrome/Edge) or by text. The prospect answers and pushes back like the real thing.',
+  'onboarding.step3Title': '3. Get your scorecard',
+  'onboarding.step3Body': 'Score per criterion, talk ratio, objection handling and one focus for your next call.',
+  'onboarding.cta': 'Start training',
   'app.demoTooltip':
     'Supabase not configured: prospect and evaluation are simulated. See the README to wire up Claude.',
 
@@ -56,6 +65,10 @@ export const en: typeof pt = {
   'call.error': 'Call error. Try again.',
   'call.limitReached': 'Daily training limit reached (API cost protection). Come back tomorrow!',
   'call.endedEmpty': 'Call ended with no conversation — nothing to evaluate.',
+  'call.outcomeTitle': 'How did the call end?',
+  'call.outcomeHint': 'This feeds your meeting rate on the dashboard.',
+  'call.outcomeRejected': 'Went nowhere / declined',
+  'call.outcomeAbandoned': 'Just ended the practice',
   'call.editHint': 'Edit the transcript before sending if needed.',
 
   'score.title': 'Scorecard',
@@ -89,6 +102,17 @@ export const en: typeof pt = {
   'score.openerRewrite': 'Your opener, rewritten',
   'score.bestLine': 'Best moment',
   'score.worstLine': 'To avoid',
+  'score.demoNotice':
+    'Scores come from this call’s objective metrics. Connect Claude (see the README) for a sales coach’s qualitative feedback.',
+
+  // Data / backup
+  'data.title': 'Your data',
+  'data.hint': 'Progress is stored in this browser. Export it to analyse, or to move it to another device.',
+  'data.exportCsv': 'Export CSV',
+  'data.exportBackup': 'Backup (JSON)',
+  'data.import': 'Restore backup',
+  'data.imported': 'Backup restored: {n} new sessions.',
+  'data.importError': 'Invalid file — use a backup exported by this app.',
   'score.outcome.meeting_booked': 'Meeting booked 🎉',
   'score.outcome.rejected': 'Prospect hung up',
   'score.outcome.abandoned': 'Call abandoned',

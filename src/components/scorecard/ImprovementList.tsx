@@ -16,7 +16,7 @@ export function ImprovementList({
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.4 }}
+        transition={{ delay: 0.5 }}
         className="rounded-xl border border-emerald-900/50 bg-emerald-950/20 p-4"
       >
         <h3 className="mb-3 text-sm font-semibold text-emerald-300">✓ {t('score.strengths')}</h3>
@@ -38,7 +38,7 @@ export function ImprovementList({
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.55 }}
+        transition={{ delay: 0.6 }}
         className="rounded-xl border border-amber-900/50 bg-amber-950/20 p-4"
       >
         <h3 className="mb-3 text-sm font-semibold text-amber-300">↗ {t('score.improvements')}</h3>
