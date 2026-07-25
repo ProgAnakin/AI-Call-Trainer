@@ -24,7 +24,7 @@ export function CriterionCard({ def, result, index }: Props) {
     <motion.div
       initial={{ opacity: 0, x: -12 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.15 * index + 0.6 }}
+      transition={{ delay: 0.05 * index + 0.3 }}
       className="rounded-xl border border-slate-800 bg-surface-raised p-4"
     >
       <div className="mb-2 flex items-baseline justify-between gap-2">
@@ -41,7 +41,7 @@ export function CriterionCard({ def, result, index }: Props) {
           className={clsx('h-full rounded-full', barColor(score))}
           initial={{ width: 0 }}
           animate={{ width: `${score * 10}%` }}
-          transition={{ delay: 0.15 * index + 0.7, duration: 0.5, ease: 'easeOut' }}
+          transition={{ delay: 0.05 * index + 0.4, duration: 0.5, ease: 'easeOut' }}
         />
       </div>
       {result?.comment && <p className="text-xs leading-relaxed text-slate-400">{result.comment}</p>}

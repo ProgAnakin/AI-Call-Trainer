@@ -235,6 +235,34 @@ export function Call() {
     );
   }
 
+  // ---------- Confirmação do desfecho ----------
+  // Adivinhar "abandonada" aqui corromperia a taxa de meeting do dashboard.
+  if (call.state === 'confirming_outcome') {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="space-y-4 text-center">
+            <div>
+              <p className="text-lg font-semibold">{t('call.outcomeTitle')}</p>
+              <p className="mt-1 text-sm text-slate-400">{t('call.outcomeHint')}</p>
+            </div>
+            <div className="grid gap-2">
+              <Button onClick={() => void call.confirmOutcome('meeting_booked')}>
+                🎉 {t('score.outcome.meeting_booked')}
+              </Button>
+              <Button variant="secondary" onClick={() => void call.confirmOutcome('rejected')}>
+                {t('call.outcomeRejected')}
+              </Button>
+              <Button variant="ghost" onClick={() => void call.confirmOutcome('abandoned')}>
+                {t('call.outcomeAbandoned')}
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
   // ---------- Encerrada sem conversa ----------
   if (call.state === 'ended_empty') {
     return (

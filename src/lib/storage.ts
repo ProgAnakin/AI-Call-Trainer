@@ -169,3 +169,56 @@ export function getEvaluationBySession(sessionId: string): Evaluation | undefine
 export function getSession(sessionId: string): Session | undefined {
   return readLs<Session>(LS_KEYS.sessions).find((s) => s.id === sessionId);
 }
+
+// ---------- Backup / restore ----------
+
+/** Everything this device stores, in one portable object. */
+export interface Backup {
+  version: 1;
+  exported_at: string;
+  sessions: Session[];
+  turns: Turn[];
+  evaluations: Evaluation[];
+  products: Product[];
+  personas: Persona[];
+  scenarios: Scenario[];
+}
+
+export function readBackup(): Backup {
+  return {
+    version: 1,
+    exported_at: new Date().toISOString(),
+    sessions: readLs<Session>(LS_KEYS.sessions),
+    turns: readLs<Turn>(LS_KEYS.turns),
+    evaluations: readLs<Evaluation>(LS_KEYS.evaluations),
+    products: readLs<Product>(LS_KEYS.products),
+    personas: readLs<Persona>(LS_KEYS.personas),
+    scenarios: readLs<Scenario>(LS_KEYS.scenarios),
+  };
+}
+
+/** Merges by id — importing the same backup twice never duplicates rows. */
+function mergeById<T extends { id: string }>(key: string, incoming: T[] | undefined): number {
+  if (!Array.isArray(incoming) || incoming.length === 0) return 0;
+  const existing = readLs<T>(key);
+  const byId = new Map(existing.map((item) => [item.id, item]));
+  let added = 0;
+  for (const item of incoming) {
+    if (!item || typeof item.id !== 'string') continue;
+    if (!byId.has(item.id)) added++;
+    byId.set(item.id, item);
+  }
+  writeLs(key, [...byId.values()]);
+  return added;
+}
+
+/** Restores a backup into localStorage. Returns how many new sessions landed. */
+export function restoreBackup(backup: Partial<Backup>): number {
+  const sessions = mergeById(LS_KEYS.sessions, backup.sessions);
+  mergeById(LS_KEYS.turns, backup.turns);
+  mergeById(LS_KEYS.evaluations, backup.evaluations);
+  mergeById(LS_KEYS.products, backup.products);
+  mergeById(LS_KEYS.personas, backup.personas);
+  mergeById(LS_KEYS.scenarios, backup.scenarios);
+  return sessions;
+}

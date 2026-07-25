@@ -1,256 +1,376 @@
 # 🎙️ AI Call Trainer
 
-Treinador de chamadas de vendas por IA. Você faz uma **cold call / discovery call**
-(por voz no navegador ou por texto) com um **prospect simulado por Claude**, alimentado
-com fichas de produto (Salesforce como catálogo inicial), e recebe ao final um
-**scorecard de performance** com nota por critério, citações do transcript e plano de melhoria.
+**Practise sales calls against an AI prospect and get a real scorecard — free, multilingual, and running entirely in your browser.**
 
-**Idiomas:** 🇧🇷 pt-BR · 🇵🇹 pt-PT · 🇮🇹 it-IT · 🇺🇸 en-US — UI em PT/IT/EN.
+You pick a scenario, dial in, and hold a cold call or discovery call with a prospect
+played by Claude. The prospect has their own pains, hidden objections, personality and
+mood, and they push back like the real thing. When you hang up, you get a structured
+performance scorecard: a score per criterion, objective conversation metrics, an
+objection-by-objection breakdown, and one thing to focus on next time.
 
-> SDRs só treinam em call real (queimando leads) ou com roleplay humano (caro, sem
-> disponibilidade). As ferramentas existentes são enterprise, pagas por assento e
-> centradas em inglês. Este projeto é gratuito, individual e multilíngue.
+**Languages:** 🇧🇷 pt-BR · 🇵🇹 pt-PT · 🇮🇹 it-IT · 🇺🇸 en-US (UI in PT / IT / EN)
+
+> **Why this exists.** SDRs only get to practise on live calls — burning real leads — or
+> in human roleplay, which is expensive and rarely available. The tools that solve this
+> are enterprise, priced per seat, and English-first. This one is free, built for a single
+> person, and speaks Portuguese and Italian.
 
 ---
 
-## Como funciona
+## Table of contents
+
+- [How it works](#how-it-works)
+- [Feature tour](#feature-tour)
+- [Tech stack](#tech-stack)
+- [Security model](#security-model)
+- [Cost](#cost)
+- [Running locally](#running-locally)
+- [Connecting Claude (live mode)](#connecting-claude-live-mode)
+- [Deploying to Vercel](#deploying-to-vercel)
+- [Project structure](#project-structure)
+- [Scoring model](#scoring-model)
+- [Voice implementation notes](#voice-implementation-notes)
+- [Your data](#your-data)
+- [Testing](#testing)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+---
+
+## How it works
 
 ```
-┌────────────┐   fala    ┌──────────────────┐   texto   ┌──────────────────────┐
-│  Usuário   │──────────▶│  Web Speech API   │──────────▶│ Edge Fn: /roleplay    │
-│ (navegador)│◀──────────│  (STT + TTS)      │◀──────────│  → Claude (persona)   │
-└────────────┘   áudio    └──────────────────┘  resposta └──────────────────────┘
-      │                                                            │
-      │ fim da call                                                ▼
-      │                 ┌──────────────────────┐        ┌──────────────────────┐
-      └────────────────▶│ Edge Fn: /evaluate    │───────▶│ Supabase (sessions,   │
-                        │  → Claude (avaliador) │        │ turns, evaluations)   │
-                        └──────────────────────┘        └──────────────────────┘
+┌────────────┐   speech   ┌──────────────────┐   text    ┌──────────────────────┐
+│    You     │───────────▶│  Web Speech API  │──────────▶│ Edge Fn: /roleplay   │
+│ (browser)  │◀───────────│   (STT + TTS)    │◀──────────│  → Claude (persona)  │
+└────────────┘   audio    └──────────────────┘   reply   └──────────────────────┘
+      │                                                             │
+      │ hang up                                                     ▼
+      │                  ┌──────────────────────┐        ┌──────────────────────┐
+      └─────────────────▶│ Edge Fn: /evaluate   │───────▶│ Supabase (sessions,  │
+                         │  → Claude (coach)    │        │ turns, evaluations)  │
+                         └──────────────────────┘        └──────────────────────┘
 ```
 
-Dois "cérebros" separados, dois prompts separados:
+**Two separate brains, two separate prompts — never mixed:**
 
-1. **Prospect (roleplay):** responde em personagem, curto, natural, com objeções.
-   `temperature 0.8`, `max_tokens 200`.
-2. **Avaliador (juiz):** recebe o transcript completo ao final e devolve JSON com
-   scorecard. `temperature 0.2`, JSON validado no servidor com retry.
+1. **The prospect (roleplay).** Stays in character, answers in short lines, raises
+   objections, reveals pain only when you earn it. `temperature 0.8`, `max_tokens 200`.
+2. **The coach (evaluator).** Receives the full transcript once, at the end, and returns
+   the scorecard as validated JSON. `temperature 0.2`, with a re-ask on parse failure.
 
-Eles nunca se misturam — o prospect não "sabe" que existe avaliação.
+The prospect never knows it's being graded, which is what keeps the roleplay honest.
 
-## Stack
+---
 
-| Camada | Tecnologia |
-|---|---|
-| Frontend | React 18 + TypeScript + Vite |
-| UI | Tailwind CSS + componentes próprios estilo shadcn |
-| Animações | Framer Motion |
-| Voz | Web Speech API (`SpeechRecognition` push-to-talk + `speechSynthesis`) |
-| LLM | Claude API (`claude-haiku-4-5` por default — configurável) via Supabase Edge Functions |
-| Backend/DB | Supabase (PostgreSQL + Edge Functions) |
-| Deploy | Vercel |
-| Testes | Vitest |
+## Feature tour
 
-### ⚠️ Regra de ouro de segurança
+### The call
 
-**A API key da Anthropic NUNCA vai no cliente.** Toda chamada ao LLM passa pelas
-Edge Functions `/roleplay` e `/evaluate`, que guardam a key como secret e aplicam
-**rate limiting por dispositivo** (defaults: 20 turnos/call, 6 calls/dia,
-8 avaliações/dia — ajustáveis via secrets, ver tabela abaixo).
-No cliente só existe a anon key do Supabase.
+- **Scenario cards** — persona × product × call type × difficulty × language.
+- **Pre-call briefing** — who picks up, their personality bars, their **mood**, what you're
+  selling, your objective, and the time limit.
+- **Voice or text.** Voice uses push-to-talk with a live transcript you can edit before
+  sending. Browsers without speech support fall back to text automatically.
+- **Live call screen** — animated waveform, countdown timer, running transcript.
+- The prospect can **end the call themselves** — badly, or by agreeing to a next step.
 
-### 💰 Custo — desenhado para ser (quase) zero
+### The scorecard
 
-| Item | Custo |
-|---|---|
-| Supabase (banco + Edge Functions) | **€0** — free tier |
-| Vercel (hosting) | **€0** — free tier |
-| Modo demo (sem Claude configurado) | **€0** — prospect e avaliador simulados |
-| Claude API (modo real) | **pay-per-use** — só paga o que consumir, sem mensalidade |
+- **Overall score** with an animated reveal, weighted by the framework's criteria.
+- **One focus for next time** — the single highest-impact change, surfaced first so you
+  aren't drowned in feedback.
+- **Objective metrics** computed in code (see [Scoring model](#scoring-model)).
+- **Score per criterion** with weights and a coach's comment.
+- **Objection map** — every objection you faced, labelled *ignored*, *rebutted instantly*,
+  or *explored properly*.
+- **Missed buying signals**, **your opener rewritten**, and your **best / worst line**,
+  all quoted from the transcript.
+- **Full transcript**, collapsible.
 
-O modelo default é o **Claude Haiku 4.5** (US$ 1/M tokens de entrada,
-US$ 5/M de saída — o mais barato da família e ótimo para falas curtas em
-personagem). Contas reais:
+### Objection Gauntlet (`/drill`)
 
-- 1 call de 10 turnos + avaliação ≈ 15–20k tokens ≈ **US$ 0,03**
-- Uso realista de treino (1–3 calls/dia, alguns dias por semana) ≈ **< €1/mês**
-- Pior caso com os limites default (6 calls × 30 dias) ≈ **~€5/mês** — e para
-  isso você teria que treinar no teto do limite todos os dias do mês
+Rapid-fire objection practice — the drill an SDR actually repeats daily. Real objections
+from the product library come at you one at a time; you answer, get an **instant score**
+(acknowledge → explore → respond), and see the **model answer** to compare against. Ends
+with an average, a per-objection breakdown, and a personal best per product.
 
-Camadas de proteção, da mais interna à mais externa:
+Runs entirely client-side: **zero API cost and no latency**, which is what makes rapid-fire
+viable.
 
-1. `max_tokens` baixo em toda chamada (falas curtas por design)
-2. Rate limit por dispositivo nas Edge Functions (tabela abaixo)
-3. **Spend limit na console da Anthropic** — é um TETO, não uma assinatura:
-   configure US$ 5 e é matematicamente impossível gastar mais que isso
+### Progress dashboard (`/progress`)
 
-Configuração opcional via secrets (sem redeploy):
+- **Meeting rate** — the SDR north-star metric.
+- **Weakest-area spotlight** — the criterion to train next.
+- Weekly score trend, per-criterion averages, session history, and a training streak.
+- **Export CSV** (analysis dataset) and **JSON backup / restore** (see [Your data](#your-data)).
 
-| Secret | Default | Para quê |
+### Library (`/library`)
+
+CRUD for your own products, personas and scenarios, on top of the Salesforce seed —
+so you can train on *your* product, not the demo one.
+
+---
+
+## Tech stack
+
+| Layer | Choice | Why |
 |---|---|---|
-| `ANTHROPIC_MODEL` | `claude-haiku-4-5` | Modelo do prospect |
-| `ANTHROPIC_EVAL_MODEL` | = `ANTHROPIC_MODEL` | Modelo do avaliador — `claude-sonnet-4-6` dá feedback de coach mais profundo por ~3× o custo |
-| `MAX_CALLS_PER_DAY` | `6` | Calls de roleplay por dispositivo/dia |
-| `MAX_EVALS_PER_DAY` | `8` | Avaliações por dispositivo/dia |
-| `MAX_TURNS_PER_CALL` | `20` | Turnos do rep por call |
+| Frontend | React 18 + TypeScript + Vite | Fast, typed, zero-config |
+| UI | Tailwind CSS + local component set | No component-library dependency to maintain |
+| Animation | Framer Motion | Call transitions and the scorecard reveal |
+| Speech-to-text | Web Speech API (`SpeechRecognition`) | Free, in-browser, supports pt-BR / pt-PT / it-IT / en-US |
+| Text-to-speech | Web Speech API (`speechSynthesis`) | Free; voice is selectable per language |
+| LLM | Claude API (`claude-haiku-4-5` by default) | The prospect and the coach; the only paid piece |
+| Backend | Supabase (Postgres + Edge Functions) | Free tier; the Edge Function is what protects the API key |
+| Hosting | Vercel | Free tier, deploys on push, HTTPS (required for the mic) |
+| Tests | Vitest | Unit tests for the metric and scoring logic |
 
-## Rodando localmente
+---
+
+## Security model
+
+> **The Anthropic API key never reaches the browser.**
+
+Every LLM call goes through a Supabase Edge Function (`/roleplay`, `/evaluate`) that holds
+the key as a secret. The browser only ever sees the Supabase anon key, which is public by
+design. On top of that, the functions apply **per-device rate limiting** (defaults: 20 rep
+turns per call, 6 calls/day, 8 evaluations/day) so a runaway loop can't run up a bill.
+
+---
+
+## Cost
+
+| Item | Cost |
+|---|---|
+| Supabase (database + Edge Functions) | **€0** — free tier |
+| Vercel (hosting) | **€0** — free tier |
+| Demo mode (no Claude configured) | **€0** — prospect and evaluator are simulated locally |
+| Objection Gauntlet | **€0** — scored client-side, no API calls |
+| Claude API (live mode) | **pay-per-use** — no subscription, no minimum |
+
+The default model is **Claude Haiku 4.5** ($1/M input, $5/M output tokens), which is both
+the cheapest in the family and well suited to short in-character replies.
+
+- One 10-turn call plus its evaluation ≈ 15–20k tokens ≈ **US$0.03**
+- Realistic training use (1–3 calls a day, a few days a week) ≈ **under €1/month**
+- Absolute worst case at the default limits (6 calls × 30 days) ≈ **~€5/month** — and only
+  if you max out the daily cap every single day
+
+**Three layers of cost protection**, innermost first:
+
+1. Low `max_tokens` on every call (short lines are a design goal, not just a saving)
+2. Per-device rate limits in the Edge Functions (table below)
+3. A **spend limit in the Anthropic console** — a hard ceiling, not a subscription
+
+Optional configuration, via Supabase secrets, no redeploy of code needed:
+
+| Secret | Default | Purpose |
+|---|---|---|
+| `ANTHROPIC_MODEL` | `claude-haiku-4-5` | Model for the prospect |
+| `ANTHROPIC_EVAL_MODEL` | same as `ANTHROPIC_MODEL` | Model for the coach — set to `claude-sonnet-4-6` for deeper feedback at ~3× the cost |
+| `MAX_CALLS_PER_DAY` | `6` | Roleplay calls per device per day |
+| `MAX_EVALS_PER_DAY` | `8` | Evaluations per device per day |
+| `MAX_TURNS_PER_CALL` | `20` | Rep turns within a single call |
+
+---
+
+## Running locally
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # métricas objetivas (talk ratio, perguntas, streak...)
-npm run build      # typecheck + bundle de produção
+npm test           # unit tests
+npm run build      # typecheck + production bundle
 ```
 
-Sem configurar nada, o app roda em **modo demo**: o prospect e o avaliador são
-simulados localmente (sem custo, sem IA) — útil para conhecer o fluxo completo
-de UI. O badge "Modo demo" fica visível no header.
+With nothing configured, the app runs in **demo mode**: the prospect and the evaluator are
+simulated locally, at no cost and with no AI. Every screen and flow works, which makes it
+the fastest way to see what the app does. A badge in the header marks the mode.
 
-## Ligando o Claude (modo real)
+---
 
-**Sem terminal (pelo navegador):** siga o guia passo a passo em
-[`supabase/dashboard-deploy/README.md`](supabase/dashboard-deploy/) — copiar e
-colar as duas funções no painel do Supabase.
+## Connecting Claude (live mode)
 
-**Pelo terminal (CLI):**
+### Option A — browser only, no terminal
 
-1. Crie um projeto no [Supabase](https://supabase.com) (free tier).
-2. Aplique a migration:
-   ```bash
-   supabase db push        # ou cole supabase/migrations/0001_init.sql no SQL editor
-   ```
-3. Configure a secret e faça deploy das Edge Functions:
-   ```bash
-   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-   supabase functions deploy roleplay
-   supabase functions deploy evaluate
-   ```
-4. Copie `.env.example` para `.env` e preencha `VITE_SUPABASE_URL` e
-   `VITE_SUPABASE_ANON_KEY`.
-5. Configure um **spend limit** na console da Anthropic (ex.: US$ 5). É só um
-   teto de segurança — você paga apenas o que usar (ver seção de custo acima).
+Follow [`supabase/dashboard-deploy/README.md`](supabase/dashboard-deploy/). The two
+functions in that folder are single-file, copy-paste-ready builds (the Supabase dashboard
+deploys one function at a time and doesn't resolve shared imports).
 
-## Deploy (Vercel)
+### Option B — Supabase CLI
 
-Importe o repositório na Vercel, adicione as duas env vars `VITE_SUPABASE_*` e
-pronto — `vercel.json` já cuida do rewrite de SPA. Microfone exige HTTPS (ok na Vercel).
+```bash
+supabase db push                                   # or paste supabase/migrations/0001_init.sql
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+supabase functions deploy roleplay
+supabase functions deploy evaluate
+```
 
-## Estrutura
+Then copy `.env.example` to `.env` and fill in `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_ANON_KEY` (both from **Project Settings → API**; use the `anon` / public
+key, never `service_role`).
+
+Finally, set a **spend limit** in the Anthropic console. It's a safety ceiling — you still
+only pay for what you use.
+
+---
+
+## Deploying to Vercel
+
+Import the repository, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as environment
+variables, and deploy. `vercel.json` already handles SPA routing, and Vercel's HTTPS is
+what allows microphone access.
+
+> **Vite bakes environment variables in at build time.** If you add or change them after a
+> deploy, you must **redeploy** for the change to reach the site.
+
+---
+
+## Project structure
 
 ```
 src/
 ├── components/
 │   ├── call/            # PushToTalk, Waveform, Timer, TranscriptLive
-│   ├── scorecard/       # ScoreReveal, CriterionCard, ImprovementList
+│   ├── scorecard/       # ScoreReveal, CriterionCard, MetricsGrid, ImprovementList
+│   ├── dashboard/       # ProgressChart, SessionHistory, StreakBadge, DataPanel
 │   ├── library/         # ProductForm, PersonaForm, ScenarioBuilder
-│   └── dashboard/       # ProgressChart, SessionHistory, StreakBadge
+│   ├── Onboarding.tsx   # first-visit intro
+│   └── ui.tsx           # Button, Card, Badge, Input, Select, Textarea
 ├── data/
-│   ├── seed/            # 4 produtos Salesforce + 6 personas + 8 cenários
-│   └── frameworks.ts    # critérios e pesos: básico / SPICED / MEDDIC
+│   ├── seed/            # 4 Salesforce products, 6 personas, 8 scenarios
+│   └── frameworks.ts    # criteria and weights: basic / SPICED / MEDDIC
 ├── hooks/
-│   ├── useSpeech.ts     # STT + TTS unificados (push-to-talk)
-│   ├── useCallSession.ts# máquina de estados da call
-│   └── useProgress.ts   # métricas históricas + streak
+│   ├── useSpeech.ts     # STT + TTS behind one interface
+│   ├── useCallSession.ts# the call state machine
+│   └── useProgress.ts   # historical metrics, streak, meeting rate
 ├── lib/
-│   ├── supabase.ts      # cliente + device id anônimo
-│   ├── storage.ts       # persistência (Supabase ou localStorage)
-│   ├── api.ts           # roleplay/evaluate (Edge Functions ou modo demo)
-│   └── metrics.ts       # talk ratio, contagem de perguntas (client-side)
-├── i18n/                # UI em PT / IT / EN
-└── pages/               # Home, Call, Scorecard, Progress, Library
+│   ├── api.ts           # roleplay/evaluate — Edge Functions or demo fallback
+│   ├── metrics.ts       # conversation intelligence, computed in code
+│   ├── thresholds.ts    # coaching targets — the "what good looks like" constants
+│   ├── objections.ts    # gauntlet scoring (acknowledge → explore → respond)
+│   ├── moods.ts         # prospect mood selection
+│   ├── storage.ts       # persistence + backup/restore
+│   ├── exporters.ts     # CSV and JSON export
+│   └── supabase.ts      # client + anonymous device id
+├── i18n/                # UI strings in PT / IT / EN
+└── pages/               # Home, Call, Drill, Scorecard, Progress, Library
 supabase/
-├── functions/
-│   ├── roleplay/        # persona → Claude → resposta (com rate limit)
-│   ├── evaluate/        # transcript → Claude → JSON scorecard
-│   └── _shared/         # CORS, rate limiting, cliente Anthropic
-└── migrations/          # schema + seed com UUIDs fixos
+├── functions/           # roleplay, evaluate, _shared (CLI deploys)
+├── dashboard-deploy/    # same functions, single-file, for the web dashboard
+└── migrations/          # schema, RLS and seed
 ```
 
-### Máquina de estados da call
+### Call state machine
 
-`briefing → listening/waiting_input → processing → speaking → (loop) → ended → evaluating → scored`
+```
+briefing → listening | waiting_input → processing → speaking → (loop)
+         → confirming_outcome → evaluating → scored
+```
 
-## Scorecard — critérios e pesos (framework básico)
+`confirming_outcome` exists because guessing the result would corrupt the meeting-rate
+metric: when you hang up manually and the prospect hasn't already committed to a next
+step, the app asks how the call actually ended.
 
-| Critério | Peso | O que mede |
+---
+
+## Scoring model
+
+### Criteria and weights (basic framework)
+
+| Criterion | Weight | What it measures |
 |---|---|---|
-| Abertura | 15% | Pattern interrupt, permissão, motivo da ligação em <20s |
-| Descoberta | 25% | Perguntas abertas, qualificação, cavou a dor? |
-| Escuta ativa | 15% | Respondeu ao que a persona disse ou seguiu script cego? |
-| Tratamento de objeções | 20% | Acknowledge → explore → respond |
-| Clareza de valor | 10% | Conectou feature → dor específica da persona |
-| Próximo passo | 15% | Pediu o meeting? Data/hora concreta? |
+| Opening | 15% | Pattern interrupt, permission, reason for the call in under 20s |
+| Discovery | 25% | Open questions, qualification, did you dig into the pain? |
+| Active listening | 15% | Did you respond to what they said, or follow a script? |
+| Objection handling | 20% | Acknowledge → explore → respond |
+| Value clarity | 10% | Did you connect a feature to *their* specific pain? |
+| Next step | 15% | Did you ask for the meeting, with a concrete time? |
 
-Frameworks **SPICED** e **MEDDIC** também estão definidos em `src/data/frameworks.ts`,
-e a rubrica é **escolhida automaticamente pelo tipo de call** (`frameworkForCallType`):
-cold call → Fundamentos, discovery → SPICED, negociação → MEDDIC. Uma cold call e uma
-negociação são jogos diferentes e não devem ser avaliadas pela mesma régua.
+**SPICED** and **MEDDIC** are also defined, and the rubric is **chosen automatically by call
+type**: cold call → basic, discovery → SPICED, negotiation → MEDDIC. A cold call and a
+negotiation are different games and shouldn't be judged with the same ruler.
 
-### Conversation intelligence — métricas objetivas (custo de IA zero)
+### Conversation intelligence (computed in code, zero AI cost)
 
-Calculadas em código a partir do transcript + timestamps (não pela IA), no estilo
-Gong/Chorus:
+Derived from the transcript and turn timestamps, in the spirit of Gong/Chorus:
 
-- **Talk ratio** (meta: rep ≤ 55% em discovery) e **maior monólogo do rep** (meta < 150 palavras)
-- **Ritmo** em palavras/min (só no modo voz)
-- **Perguntas abertas vs. fechadas** e **tempo até a 1ª pergunta**
-- **Muletas de linguagem** por idioma ("tipo", "né", "cioè", "like"...)
-- **Próximo passo concreto** detectado (dia/hora)
-- Duração vs. time limit; **taxa de meeting agendado** e evolução histórica no dashboard
+- **Talk ratio** (target: rep ≤ 55%) and **longest rep monologue** (target: under 150 words)
+- **Speaking pace** in words per minute (voice mode only)
+- **Open vs. closed questions**, and **time to first question**
+- **Filler words**, per language ("tipo", "né", "cioè", "like"…)
+- **Concrete next step detected** (a day and a time)
+- Duration against the scenario's time limit
 
-A **nota geral é sempre recalculada no servidor** a partir das notas por critério ×
-pesos do framework — a IA dá as notas e os comentários, a matemática é determinística.
+All targets live in one place, `src/lib/thresholds.ts`.
 
-### Feedback cirúrgico do avaliador
+### Deterministic overall score
 
-Além das notas por critério, o scorecard traz: **foco único para a próxima call**,
-**mapa de objeções** (ignorou / rebateu na hora / explorou), **sinais de compra
-perdidos**, **reescrita da abertura**, e **melhor / pior linha** — tudo com citação
-do transcript. O dashboard destaca o **critério mais fraco** para o rep saber onde focar.
-O scorecard também inclui o **transcript completo da call** (colapsável).
+The LLM assigns per-criterion scores and writes the comments. The **overall score is always
+recomputed server-side** from those scores × the framework weights. The judgement is the
+model's; the arithmetic is deterministic.
 
-### Objection Gauntlet — treino rápido de objeções
+---
 
-Em `/drill`: uma rajada de objeções reais do produto, uma a uma. Você responde,
-recebe uma **nota instantânea** (reconhecer → explorar → responder) e vê a
-**resposta modelo** para comparar. Tudo **client-side** (custo de IA zero, feedback
-imediato — ideal para rajada) com recorde pessoal por produto. É o treino diário
-que um SDR realmente repete.
+## Voice implementation notes
 
-### Humor do prospect
+- `SpeechRecognition` is only reliable in **Chrome/Edge** — the app detects support and
+  falls back to text mode automatically.
+- **Push-to-talk** (hold the button or the space bar) rather than continuous recognition:
+  far more robust with accents and background noise.
+- The live transcript is **editable before you send it**, because STT will misfire.
+- TTS voices vary by operating system, so the briefing lets you **pick the prospect's
+  voice**; the choice is remembered per language.
+- When the prospect ends the call, evaluation only starts **after** the TTS finishes
+  speaking the final line.
 
-Cada cenário tem um **humor** (apressado / desconfiado / curioso / cordial-mas-evasivo
-/ irritado), mostrado no briefing e injetado no prompt do prospect — um CEO apressado
-e um ops curioso mudam a call inteira.
+---
 
-## Voz — notas de implementação
+## Your data
 
-- `SpeechRecognition` só funciona bem em **Chrome/Edge** → detecção automática com
-  fallback para modo texto.
-- **Push-to-talk** (segure o botão ou a barra de espaço) em vez de reconhecimento
-  contínuo — mais confiável com sotaque/ruído.
-- A transcrição aparece em tempo real e pode ser **editada antes de enviar**.
-- Vozes TTS variam por sistema operacional; no briefing dá para **escolher a voz**
-  do prospect entre as disponíveis para o idioma (a escolha fica salva por idioma).
-- Quando o prospect encerra a call, a avaliação só começa **depois** que o TTS
-  termina de falar a última frase.
+Sessions, turns, evaluations and your custom library live in this browser's `localStorage`
+(and, when Supabase is configured, in Postgres as well). No account, no tracking.
 
-## Personas seed
+From the Progress page you can:
 
-| Persona | Perfil | Dificuldade natural |
-|---|---|---|
-| Marta, CFO | Cética, foco em ROI, sem tempo | 4 |
-| Paulo, Head de Vendas | Aberto mas "já usa HubSpot" | 3 |
-| Giulia, Ops Manager | Curiosa, sem poder de decisão | 2 |
-| Ricardo, CEO PME | Direto, "me manda um email" | 4 |
-| Ana, IT Director | Técnica, preocupada com integração | 3 |
-| Sr. Bianchi, dono tradicional | Desconfiado de tecnologia | 5 |
+- **Export CSV** — one row per session with scores and every objective metric. This is the
+  dataset behind "my discovery score went from 5 to 8 in three weeks".
+- **Export a JSON backup** and **restore it** — on another device, or after clearing your
+  browser. Restore merges by id, so importing the same file twice never duplicates rows.
+
+---
+
+## Testing
+
+```bash
+npm test           # Vitest, unit tests
+npm run build      # tsc --build + vite build
+```
+
+Coverage focuses on the logic that must not silently drift: conversation metrics, question
+classification, filler detection, next-step detection, streak calculation, framework
+weighting, objection scoring and CSV escaping. CI runs tests, typecheck and build on every
+push.
+
+---
 
 ## Roadmap
 
-- [x] **Fase 1 — MVP texto:** chat de roleplay + avaliador JSON + scorecard
-- [x] **Fase 2 — Voz:** push-to-talk, waveform, timer, transcrição ao vivo, fallback texto
-- [x] **Fase 3 — Scorecard sério:** frameworks SPICED/MEDDIC, métricas objetivas, dashboard + streak
-- [x] **Fase 4 — Escala:** biblioteca CRUD (seu produto/persona), multilíngue PT/IT/EN
-- [ ] TTS premium (ElevenLabs/OpenAI) como upgrade opcional
-- [ ] Modos AE avançados (demo guiada, negociação com procurement)
+- [x] **Phase 1 — Text MVP.** Roleplay chat, JSON evaluator, scorecard, deployment.
+- [x] **Phase 2 — Voice.** Push-to-talk STT, TTS with voice selection, live transcript,
+      automatic text fallback.
+- [x] **Phase 3 — Serious scoring & progress.** SPICED/MEDDIC, conversation intelligence,
+      objection map, meeting rate, weakest-area spotlight, CSV export.
+- [x] **Phase 4 — Scale.** Library CRUD, Objection Gauntlet, prospect moods, onboarding,
+      full PT/IT/EN localisation.
+- [ ] Accounts and cross-device sync (Supabase magic link) — today progress is per-browser
+- [ ] Premium TTS (ElevenLabs / OpenAI) for a less robotic prospect
+- [ ] Generate a product card from a URL, so a stranger can train on their own product
+- [ ] AE modes: guided demo and procurement negotiation
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).

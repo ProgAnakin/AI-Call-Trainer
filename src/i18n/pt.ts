@@ -6,6 +6,15 @@ export const pt = {
   'nav.library': 'Biblioteca',
   'app.tagline': 'Treine cold calls contra um prospect de IA. Receba um scorecard de verdade.',
   'app.demoBadge': 'Modo demo — sem IA',
+  'onboarding.title': 'Bem-vindo ao AI Call Trainer',
+  'onboarding.subtitle': 'Treine cold calls sem queimar leads reais. Leva 3 minutos.',
+  'onboarding.step1Title': '1. Escolha um cenário',
+  'onboarding.step1Body': 'Uma persona (com humor e objeções próprias), um produto e um tipo de call.',
+  'onboarding.step2Title': '2. Faça a call',
+  'onboarding.step2Body': 'Por voz (Chrome/Edge) ou por texto. O prospect responde e resiste como na vida real.',
+  'onboarding.step3Title': '3. Receba o scorecard',
+  'onboarding.step3Body': 'Nota por critério, talk ratio, tratamento de objeções e um foco para a próxima call.',
+  'onboarding.cta': 'Começar a treinar',
   'app.demoTooltip':
     'Supabase não configurado: prospect e avaliação são simulados. Veja o README para ligar o Claude.',
 
@@ -60,6 +69,10 @@ export const pt = {
   'call.limitReached':
     'Limite diário de treino atingido (proteção de custo da API). Volte amanhã!',
   'call.endedEmpty': 'Chamada encerrada sem conversa — nada para avaliar.',
+  'call.outcomeTitle': 'Como terminou a call?',
+  'call.outcomeHint': 'Isso alimenta sua taxa de meeting no dashboard.',
+  'call.outcomeRejected': 'Não avançou / recusou',
+  'call.outcomeAbandoned': 'Só encerrei o treino',
   'call.editHint': 'Edite a transcrição antes de enviar, se precisar.',
 
   // Scorecard
@@ -94,6 +107,17 @@ export const pt = {
   'score.openerRewrite': 'Sua abertura, reescrita',
   'score.bestLine': 'Melhor momento',
   'score.worstLine': 'A evitar',
+  'score.demoNotice':
+    'As notas vêm das métricas objetivas desta call. Ligue o Claude (README) para receber feedback qualitativo de um coach.',
+
+  // Dados / backup
+  'data.title': 'Seus dados',
+  'data.hint': 'O progresso fica guardado neste navegador. Exporte para analisar ou levar para outro dispositivo.',
+  'data.exportCsv': 'Exportar CSV',
+  'data.exportBackup': 'Backup (JSON)',
+  'data.import': 'Restaurar backup',
+  'data.imported': 'Backup restaurado: {n} sessões novas.',
+  'data.importError': 'Arquivo inválido — use um backup exportado por este app.',
   'score.outcome.meeting_booked': 'Meeting agendado 🎉',
   'score.outcome.rejected': 'Prospect desligou',
   'score.outcome.abandoned': 'Call abandonada',

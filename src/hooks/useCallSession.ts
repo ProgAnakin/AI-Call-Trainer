@@ -13,15 +13,13 @@ import type {
 import { evaluateCall, roleplayTurn } from '@/lib/api';
 import { frameworkForCallType } from '@/data/frameworks';
 import { pickMood } from '@/lib/moods';
+import { MAX_REP_TURNS } from '@/lib/thresholds';
 import {
   createSession,
   finishSession,
   saveEvaluation,
   saveTurn,
 } from '@/lib/storage';
-
-/** Trava client-side espelhando o limite default da Edge Function (20 turnos/call). */
-const MAX_REP_TURNS = 20;
 
 export interface UseCallSession {
   state: CallState;
@@ -34,8 +32,10 @@ export interface UseCallSession {
   start: (mode: SessionMode) => Promise<void>;
   /** Envia uma fala do rep e obtém a resposta do prospect. */
   sendRepLine: (content: string) => Promise<string | null>;
-  /** Rep desliga a chamada. */
+  /** Rep desliga: vai para confirming_outcome, ou encerra direto se já sabemos. */
   hangup: () => Promise<void>;
+  /** Resposta ao prompt "como terminou?" — grava o desfecho e avalia. */
+  confirmOutcome: (outcome: SessionOutcome) => Promise<void>;
   /**
    * A UI terminou de apresentar a fala do prospect (TTS concluído no modo
    * voz; imediato no modo texto). Se o prospect encerrou a call, é AQUI que
@@ -108,9 +108,30 @@ export function useCallSession(
     [session, scenario],
   );
 
+  /**
+   * Rep pressed "hang up". If the prospect already committed to a next step we
+   * know the outcome; otherwise ask, because guessing "abandoned" would corrupt
+   * the meeting-rate metric on the dashboard.
+   */
   const hangup = useCallback(async () => {
-    await endCall(meetingBookedRef.current ? 'meeting_booked' : 'abandoned');
+    if (meetingBookedRef.current) {
+      await endCall('meeting_booked');
+      return;
+    }
+    if (turnsRef.current.length === 0) {
+      await endCall('abandoned');
+      return;
+    }
+    setState('confirming_outcome');
   }, [endCall]);
+
+  /** Answer to the "how did it end?" prompt. */
+  const confirmOutcome = useCallback(
+    async (outcome: SessionOutcome) => {
+      await endCall(outcome);
+    },
+    [endCall],
+  );
 
   // Timer regressivo: o intervalo só decrementa; o desfecho fica num efeito
   // separado (efeito colateral dentro de state updater é frágil no StrictMode).
@@ -220,6 +241,7 @@ export function useCallSession(
   }, [session, endCall]);
 
   return {
+    confirmOutcome,
     state,
     turns,
     secondsLeft,

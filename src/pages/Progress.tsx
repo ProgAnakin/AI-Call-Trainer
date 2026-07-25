@@ -2,6 +2,7 @@ import { useProgress } from '@/hooks/useProgress';
 import { ProgressChart } from '@/components/dashboard/ProgressChart';
 import { SessionHistory } from '@/components/dashboard/SessionHistory';
 import { StreakBadge } from '@/components/dashboard/StreakBadge';
+import { DataPanel } from '@/components/dashboard/DataPanel';
 import { Card } from '@/components/ui';
 import { FRAMEWORKS } from '@/data/frameworks';
 import { useT } from '@/i18n';
@@ -19,10 +20,12 @@ export function Progress() {
     return key;
   };
 
+  // Empty state ainda oferece o import — é justamente quando se restaura backup.
   if (data.totalSessions === 0) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-16 text-center text-slate-400">
-        {t('progress.empty')}
+      <div className="mx-auto max-w-xl px-4 py-16">
+        <p className="mb-6 text-center text-slate-400">{t('progress.empty')}</p>
+        <DataPanel hasSessions={false} />
       </div>
     );
   }
@@ -112,10 +115,12 @@ export function Progress() {
         </Card>
       )}
 
-      <Card>
+      <Card className="mb-6">
         <h2 className="mb-2 text-sm font-semibold text-slate-400">{t('progress.history')}</h2>
         <SessionHistory sessions={data.sessions} evaluations={data.evaluations} />
       </Card>
+
+      <DataPanel hasSessions />
     </div>
   );
 }

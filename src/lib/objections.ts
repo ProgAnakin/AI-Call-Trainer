@@ -1,5 +1,6 @@
 import type { Language, ModelObjection, Product } from '@/types';
 import { langFamilyOf, wordCount } from './metrics';
+import { DRILL_LENGTH, DRILL_SUBSTANCE_WORDS } from './thresholds';
 
 /**
  * Pontuação de resposta a objeção — 100% client-side (custo zero, feedback
@@ -61,7 +62,7 @@ export function scoreObjectionResponse(text: string, language: Language | 'pt' |
   const lower = text.toLowerCase().replace(/[’‘`]/g, "'");
   const acknowledged = ACK_PHRASES[fam].some((p) => lower.includes(p));
   const explored = /\?/.test(text);
-  const substantive = words >= 8;
+  const substantive = words >= DRILL_SUBSTANCE_WORDS;
   const instantRebuttal = !acknowledged && !explored && words <= 12;
 
   let score = 2; // engajou
@@ -91,7 +92,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 /** Monta a rajada de objeções de um produto (embaralhada). */
-export function buildGauntlet(product: Product, max = 5): ModelObjection[] {
+export function buildGauntlet(product: Product, max = DRILL_LENGTH): ModelObjection[] {
   return shuffle(product.common_objections).slice(0, max);
 }
 
