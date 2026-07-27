@@ -25,6 +25,7 @@ export const pt = {
   'home.quickDrill': 'Treino de objeções',
   'home.difficulty': 'Dificuldade',
   'home.empty': 'Nenhum cenário. Crie um na Biblioteca.',
+  'home.callLangTip': 'Idioma da call — você fala nesta língua (independe do idioma da interface).',
 
   // Tipos de call
   'callType.cold_call': 'Cold call',
@@ -48,6 +49,9 @@ export const pt = {
   'briefing.voiceDefault': 'Voz padrão do sistema',
   'briefing.personality': 'Personalidade',
   'briefing.mood': 'Humor',
+  'briefing.callLanguage': 'Idioma da call',
+  'briefing.callLangHint':
+    'Você vai conduzir a call nesta língua. O seletor no topo muda só a interface.',
   'mood.rushed': 'Apressado',
   'mood.skeptical': 'Desconfiado',
   'mood.curious': 'Curioso',
@@ -210,4 +214,26 @@ export const pt = {
   'drill.trainAgain': 'Nova rajada',
   'drill.changeProduct': 'Trocar produto',
   'drill.quit': 'Sair do treino',
+  'drill.pressureMode': 'Modo pressão',
+  'drill.pressureHint': 'Cronômetro de {s}s por objeção — responda rápido, como no telefone.',
+  'drill.timeUp': 'Tempo esgotado',
+
+  // Sincronização entre dispositivos (opt-in, requer Supabase)
+  'sync.button': 'Sincronizar',
+  'sync.title': 'Sincronizar progresso',
+  'sync.subtitle': 'Entre com seu e-mail para acessar seu progresso em qualquer dispositivo.',
+  'sync.emailPlaceholder': 'voce@email.com',
+  'sync.sendLink': 'Enviar link de acesso',
+  'sync.sending': 'Enviando...',
+  'sync.linkSent': 'Link enviado! Abra o e-mail neste dispositivo para entrar.',
+  'sync.signedInAs': 'Conectado: {email}',
+  'sync.push': 'Salvar na nuvem',
+  'sync.pull': 'Baixar da nuvem',
+  'sync.pushed': 'Progresso salvo na nuvem ✓',
+  'sync.pulled': 'Baixado: {n} sessões novas.',
+  'sync.working': 'Sincronizando...',
+  'sync.signOut': 'Sair',
+  'sync.error': 'Não foi possível sincronizar. Tente de novo.',
+  'sync.privacy': 'Guardamos só seu histórico de treino, ligado ao seu e-mail.',
+  'sync.invalidEmail': 'Digite um e-mail válido.',
 };

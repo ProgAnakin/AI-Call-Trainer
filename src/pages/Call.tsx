@@ -146,7 +146,16 @@ export function Call() {
                 <Badge color="amber">
                   {MOOD_EMOJI[mood]} {t(`briefing.mood`)}: {t(moodLabelKey(mood))}
                 </Badge>
+                <span
+                  className="flex cursor-help items-center gap-1 rounded-full bg-surface-overlay px-2 py-0.5 text-[11px] text-slate-300"
+                  title={t('briefing.callLangHint')}
+                >
+                  {LANGUAGE_FLAGS[scenario.language]} {t('briefing.callLanguage')}: {scenario.language}
+                </span>
               </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                🗣 {t('briefing.callLangHint')}
+              </p>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {traits.map((trait) => (
                   <div key={trait.label} className="rounded-lg bg-surface-overlay px-2.5 py-1.5">

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { clsx } from 'clsx';
@@ -11,6 +11,7 @@ import {
   scoreObjectionResponse,
   type ObjectionEval,
 } from '@/lib/objections';
+import { DRILL_TIMER_SECONDS } from '@/lib/thresholds';
 import { Badge, Button, Card, Select, Textarea } from '@/components/ui';
 import { useT } from '@/i18n';
 
@@ -41,6 +42,8 @@ export function Drill() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [draft, setDraft] = useState('');
   const [newRecord, setNewRecord] = useState(false);
+  const [pressure, setPressure] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(DRILL_TIMER_SECONDS);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const product = products.find((p) => p.id === productId);
@@ -57,13 +60,39 @@ export function Drill() {
     setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
-  const respond = () => {
+  // `force` submits whatever is there (even empty) — used when the timer runs out.
+  const respond = (force = false) => {
     const text = draft.trim();
-    if (!text) return;
+    if (!text && !force) return;
     const result = scoreObjectionResponse(text, objLanguage);
     setAnswers((a) => [...a, { objection: gauntlet[index], response: text, result }]);
     setPhase('reveal');
   };
+
+  // The timeout closure must see the latest draft/index, so read through a ref.
+  const respondRef = useRef(respond);
+  respondRef.current = respond;
+
+  // Pressure mode: countdown per objection. A single effect owns the whole
+  // lifecycle — it restarts on each new objection (index change), so it drives
+  // its own deadline rather than reacting to a shared secondsLeft, which avoids
+  // a stale zero from the previous objection auto-submitting the next one.
+  useEffect(() => {
+    if (!(pressure && phase === 'active')) return;
+    const deadline = Date.now() + DRILL_TIMER_SECONDS * 1000;
+    setSecondsLeft(DRILL_TIMER_SECONDS);
+    const id = setInterval(() => {
+      const left = Math.ceil((deadline - Date.now()) / 1000);
+      if (left <= 0) {
+        clearInterval(id);
+        setSecondsLeft(0);
+        respondRef.current(true);
+      } else {
+        setSecondsLeft(left);
+      }
+    }, 250);
+    return () => clearInterval(id);
+  }, [pressure, phase, index]);
 
   const next = () => {
     setDraft('');
@@ -101,6 +130,21 @@ export function Drill() {
                 </option>
               ))}
             </Select>
+          </div>
+
+          <div className="rounded-lg border border-slate-800 bg-surface p-3">
+            <label className="flex cursor-pointer items-center justify-between gap-2">
+              <span className="text-sm text-slate-200">⏱ {t('drill.pressureMode')}</span>
+              <input
+                type="checkbox"
+                checked={pressure}
+                onChange={(e) => setPressure(e.target.checked)}
+                className="h-4 w-4 accent-indigo-500"
+              />
+            </label>
+            <p className="mt-1 text-xs text-slate-500">
+              {t('drill.pressureHint', { s: DRILL_TIMER_SECONDS })}
+            </p>
           </div>
           {product && product.common_objections.length === 0 ? (
             <p className="rounded-lg bg-amber-950/40 px-3 py-2 text-xs text-amber-300">
@@ -206,6 +250,27 @@ export function Drill() {
       <AnimatePresence mode="wait">
         {phase === 'active' ? (
           <motion.div key="active" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {pressure && (
+              <div className="mb-2 flex items-center gap-2">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className={clsx(
+                      'h-full rounded-full transition-all duration-1000 ease-linear',
+                      secondsLeft <= 10 ? 'bg-red-500' : 'bg-accent',
+                    )}
+                    style={{ width: `${(secondsLeft / DRILL_TIMER_SECONDS) * 100}%` }}
+                  />
+                </div>
+                <span
+                  className={clsx(
+                    'w-8 text-right font-mono text-xs tabular-nums',
+                    secondsLeft <= 10 ? 'text-red-400' : 'text-slate-400',
+                  )}
+                >
+                  {secondsLeft}s
+                </span>
+              </div>
+            )}
             <Textarea
               ref={textareaRef}
               rows={4}
@@ -217,7 +282,7 @@ export function Drill() {
               }}
             />
             <div className="mt-2 flex justify-end">
-              <Button disabled={!draft.trim()} onClick={respond}>
+              <Button disabled={!draft.trim()} onClick={() => respond()}>
                 {t('drill.respond')}
               </Button>
             </div>
@@ -229,10 +294,15 @@ export function Drill() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-4"
           >
-            {/* Resposta do rep */}
+            {/* Resposta do rep (vazia = tempo esgotado no modo pressão) */}
             <div className="flex justify-end">
-              <div className="max-w-[85%] rounded-2xl rounded-br-md bg-accent px-4 py-2.5 text-sm text-white">
-                {lastAnswer.response}
+              <div
+                className={clsx(
+                  'max-w-[85%] rounded-2xl rounded-br-md px-4 py-2.5 text-sm',
+                  lastAnswer.response ? 'bg-accent text-white' : 'bg-red-900/50 italic text-red-300',
+                )}
+              >
+                {lastAnswer.response || `⏱ ${t('drill.timeUp')}`}
               </div>
             </div>
 
