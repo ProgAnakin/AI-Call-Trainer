@@ -81,7 +81,7 @@ export const pt = {
   'call.micBlocked': 'Microfone bloqueado. Clique no 🔒 na barra de endereço e permita o microfone.',
   'call.micNoSpeech': 'Não captei áudio. Segure o botão e fale perto do microfone.',
   'call.micNoMic': 'Nenhum microfone encontrado. Conecte um microfone e tente de novo.',
-  'call.micNetwork': 'Falha de rede no reconhecimento de voz. Verifique a conexão.',
+  'call.micNetwork': 'Não consegui acessar o serviço de voz do navegador. Brave e Safari bloqueiam isso — abra no Chrome, ou use o modo texto.',
   'call.micFailed': 'Não consegui iniciar o microfone. Tente de novo ou use o modo texto.',
   'call.switchToText': '⌨️ Mudar para texto',
 

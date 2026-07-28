@@ -77,7 +77,7 @@ export const en: typeof pt = {
   'call.micBlocked': 'Microphone blocked. Click the 🔒 in the address bar and allow the microphone.',
   'call.micNoSpeech': "Didn't catch any audio. Hold the button and speak close to the mic.",
   'call.micNoMic': 'No microphone found. Connect a mic and try again.',
-  'call.micNetwork': 'Network error in speech recognition. Check your connection.',
+  'call.micNetwork': "Couldn't reach the browser's voice service. Brave and Safari block it — open in Chrome, or use text mode.",
   'call.micFailed': "Couldn't start the microphone. Try again or use text mode.",
   'call.switchToText': '⌨️ Switch to text',
 
