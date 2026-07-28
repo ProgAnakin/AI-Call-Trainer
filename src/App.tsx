@@ -1,16 +1,21 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { I18nProvider, useT } from '@/i18n';
 import { isDemoMode } from '@/lib/api';
 import type { UiLanguage } from '@/types';
-import { Home } from '@/pages/Home';
-import { Call } from '@/pages/Call';
-import { Scorecard } from '@/pages/Scorecard';
-import { Progress } from '@/pages/Progress';
-import { Library } from '@/pages/Library';
-import { Drill } from '@/pages/Drill';
 import { Onboarding } from '@/components/Onboarding';
 import { CloudSync } from '@/components/CloudSync';
+import { Waveform } from '@/components/call/Waveform';
+
+// Cada rota vira seu próprio chunk — só a página aberta é baixada. O grosso do
+// peso (framer-motion na call, o editor da biblioteca) sai do carregamento inicial.
+const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })));
+const Call = lazy(() => import('@/pages/Call').then((m) => ({ default: m.Call })));
+const Scorecard = lazy(() => import('@/pages/Scorecard').then((m) => ({ default: m.Scorecard })));
+const Progress = lazy(() => import('@/pages/Progress').then((m) => ({ default: m.Progress })));
+const Library = lazy(() => import('@/pages/Library').then((m) => ({ default: m.Library })));
+const Drill = lazy(() => import('@/pages/Drill').then((m) => ({ default: m.Drill })));
 
 function Nav() {
   const { t, lang, setLang } = useT();
@@ -77,6 +82,15 @@ function Nav() {
   );
 }
 
+/** Placeholder enquanto o chunk da rota carrega — leve e centralizado. */
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-live="polite">
+      <Waveform active color="bg-accent" />
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <I18nProvider>
@@ -84,14 +98,16 @@ export default function App() {
         <Onboarding />
         <Nav />
         <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/drill" element={<Drill />} />
-            <Route path="/call/:scenarioId" element={<Call />} />
-            <Route path="/scorecard/:sessionId" element={<Scorecard />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/library" element={<Library />} />
-          </Routes>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/drill" element={<Drill />} />
+              <Route path="/call/:scenarioId" element={<Call />} />
+              <Route path="/scorecard/:sessionId" element={<Scorecard />} />
+              <Route path="/progress" element={<Progress />} />
+              <Route path="/library" element={<Library />} />
+            </Routes>
+          </Suspense>
         </main>
       </BrowserRouter>
     </I18nProvider>
