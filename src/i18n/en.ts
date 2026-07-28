@@ -277,4 +277,30 @@ export const en: typeof pt = {
   'gam.ach.drill_master.d': 'Reach an 8/10 average in an objection gauntlet.',
   'gam.ach.tough_closer.t': 'Tough closer',
   'gam.ach.tough_closer.d': 'Book a meeting on a hard scenario (4-5).',
+
+  // Adaptive coach (Home)
+  'coach.label': 'Recommended next step',
+  'coach.firstCall.t': 'Make your first call',
+  'coach.firstCall.b': 'Pick a scenario and get your first scorecard.',
+  'coach.firstCall.c': 'Start',
+  'coach.drill.t': 'Drill objections',
+  'coach.drill.b': 'Your weakest area is handling objections. Run a quick gauntlet.',
+  'coach.drill.c': 'Open gauntlet',
+  'coach.focus.t': 'Focus on {skill}',
+  'coach.focus.b': 'It’s your weakest skill right now. Pick a scenario and train it.',
+  'coach.focus.c': 'Pick a scenario',
+  'coach.meeting.t': 'Close the next step',
+  'coach.meeting.b': 'Your fundamentals are fine, but few calls book a meeting. Ask for a day and time.',
+  'coach.meeting.c': 'Train closing',
+  'coach.keep.t': 'Keep the momentum',
+  'coach.keep.b': 'You’re doing well. Make one more call and grow your streak.',
+  'coach.keep.c': 'New call',
+
+  // Skill matrix (Progress)
+  'skill.title': 'Skill matrix',
+  'skill.target': 'target {n}',
+  'skill.level.novice': 'Novice',
+  'skill.level.developing': 'Developing',
+  'skill.level.proficient': 'Proficient',
+  'skill.level.advanced': 'Advanced',
 };

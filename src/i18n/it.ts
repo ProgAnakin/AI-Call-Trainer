@@ -278,4 +278,30 @@ export const it: typeof pt = {
   'gam.ach.drill_master.d': 'Raggiungi 8/10 di media in una raffica di obiezioni.',
   'gam.ach.tough_closer.t': 'Chiusore duro',
   'gam.ach.tough_closer.d': 'Fissa un meeting in uno scenario difficile (4-5).',
+
+  // Coach adattivo (Home)
+  'coach.label': 'Prossimo passo consigliato',
+  'coach.firstCall.t': 'Fai la tua prima call',
+  'coach.firstCall.b': 'Scegli uno scenario e ricevi il tuo primo scorecard.',
+  'coach.firstCall.c': 'Inizia',
+  'coach.drill.t': 'Allena le obiezioni',
+  'coach.drill.b': 'Il tuo punto debole è gestire le obiezioni. Fai una raffica rapida.',
+  'coach.drill.c': 'Apri raffica',
+  'coach.focus.t': 'Concentrati su {skill}',
+  'coach.focus.b': 'È la tua competenza più debole ora. Scegli uno scenario e allenala.',
+  'coach.focus.c': 'Scegli scenario',
+  'coach.meeting.t': 'Chiudi il prossimo passo',
+  'coach.meeting.b': 'Le basi ci sono, ma poche call fissano un meeting. Chiedi giorno e ora.',
+  'coach.meeting.c': 'Allena la chiusura',
+  'coach.keep.t': 'Mantieni il ritmo',
+  'coach.keep.b': 'Stai andando bene. Fai un’altra call e aumenta il tuo streak.',
+  'coach.keep.c': 'Nuova call',
+
+  // Matrice delle competenze (Progressi)
+  'skill.title': 'Matrice delle competenze',
+  'skill.target': 'obiettivo {n}',
+  'skill.level.novice': 'Principiante',
+  'skill.level.developing': 'In sviluppo',
+  'skill.level.proficient': 'Competente',
+  'skill.level.advanced': 'Avanzato',
 };

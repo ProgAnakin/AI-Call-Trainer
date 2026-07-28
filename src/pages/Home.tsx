@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { listPersonas, listProducts, listScenarios } from '@/lib/storage';
 import { Badge, Button, Card, DifficultyDots, LANGUAGE_FLAGS } from '@/components/ui';
+import { NextBestAction } from '@/components/NextBestAction';
 import { useT } from '@/i18n';
 
 export function Home() {
@@ -24,6 +25,8 @@ export function Home() {
           🥊 {t('home.quickDrill')} →
         </Link>
       </div>
+
+      <NextBestAction />
 
       {scenarios.length === 0 && <p className="text-slate-500">{t('home.empty')}</p>}
 
