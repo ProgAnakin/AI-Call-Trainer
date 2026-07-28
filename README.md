@@ -71,8 +71,12 @@ The prospect never knows it's being graded, which is what keeps the roleplay hon
 - **Scenario cards** — persona × product × call type × difficulty × language.
 - **Pre-call briefing** — who picks up, their personality bars, their **mood**, what you're
   selling, your objective, and the time limit.
-- **Voice or text.** Voice uses push-to-talk with a live transcript you can edit before
-  sending. Browsers without speech support fall back to text automatically.
+- **Battle card** — a collapsible product playbook (value props, objection→answer,
+  competitors, pricing) for pre-call prep, also available per product in the Library.
+- **Voice or text.** Voice uses push-to-talk (Pointer Events + pointer capture, so the
+  release is reliable on desktop) with a live transcript you can edit before sending. The
+  briefing warns that browser voice needs Chrome/Edge (Brave/Safari disable it); anything
+  unsupported falls back to text automatically.
 - **Live call screen** — animated waveform, countdown timer, running transcript.
 - The prospect can **end the call themselves** — badly, or by agreeing to a next step.
 
@@ -105,15 +109,32 @@ viable.
 
 ### Progress dashboard (`/progress`)
 
-- **Meeting rate** — the SDR north-star metric.
-- **Weakest-area spotlight** — the criterion to train next.
-- Weekly score trend, per-criterion averages, session history, and a training streak.
+- **Level & XP** — an 8-tier SDR career ladder (Trainee → Rainmaker) with XP earned per
+  call (score + bonuses for booking a meeting and for hard scenarios).
+- **Achievements** — 12 badges (first meeting, streaks, polyglot, black belt, tough
+  closer…), all derived from your history.
+- **Skill matrix** — each criterion banded into a named competency (Novice → Advanced)
+  with a proficiency-target marker.
+- **Meeting rate** — the SDR north-star metric — plus weekly trend, session history, streak.
 - **Export CSV** (analysis dataset) and **JSON backup / restore** (see [Your data](#your-data)).
+
+### Adaptive coach
+
+The Home screen opens with a **recommended next step** computed from your progress: make
+your first call, drill objections, focus your weakest skill, or work on closing more
+meetings — each linking straight to the right screen.
 
 ### Library (`/library`)
 
 CRUD for your own products, personas and scenarios, on top of the Salesforce seed —
-so you can train on *your* product, not the demo one.
+so you can train on *your* product, not the demo one. Each product shows its **battle card**.
+
+### Also
+
+- **Installable PWA** — add to your phone/desktop; the shell works offline.
+- **Accessibility** — visible keyboard focus, `prefers-reduced-motion` support, a
+  skip-to-content link, and a language-synced `<html lang>`.
+- **Privacy & Terms** (`/legal`) — plain-language LGPD/GDPR disclosures linked in the footer.
 
 ---
 
@@ -241,20 +262,28 @@ src/
 │   ├── scorecard/       # ScoreReveal, CriterionCard, MetricsGrid, ImprovementList
 │   ├── dashboard/       # ProgressChart, SessionHistory, StreakBadge, DataPanel
 │   ├── library/         # ProductForm, PersonaForm, ScenarioBuilder
+│   ├── dashboard/       # + LevelCard, Achievements, SkillMatrix
+│   ├── BattleCard.tsx   # product playbook (briefing + library)
+│   ├── NextBestAction.tsx  # adaptive coach card on Home
+│   ├── Footer.tsx       # legal links (MIT repo)
 │   ├── Onboarding.tsx   # first-visit intro
 │   └── ui.tsx           # Button, Card, Badge, Input, Select, Textarea
 ├── data/
 │   ├── seed/            # 4 Salesforce products, 6 personas, 8 scenarios
-│   └── frameworks.ts    # criteria and weights: basic / SPICED / MEDDIC
+│   ├── frameworks.ts    # criteria and weights: basic / SPICED / MEDDIC
+│   └── legal.ts         # trilingual privacy + terms content
 ├── hooks/
-│   ├── useSpeech.ts     # STT + TTS behind one interface
+│   ├── useSpeech.ts     # STT + TTS behind one interface (+ mic errors, warmup)
 │   ├── useCallSession.ts# the call state machine
-│   └── useProgress.ts   # historical metrics, streak, meeting rate
+│   ├── useProgress.ts   # historical metrics, streak, meeting rate
+│   └── useGamification.ts  # XP / level / achievements from history
 ├── lib/
 │   ├── api.ts           # roleplay/evaluate — Edge Functions or demo fallback
 │   ├── metrics.ts       # conversation intelligence, computed in code
 │   ├── thresholds.ts    # coaching targets — the "what good looks like" constants
 │   ├── objections.ts    # gauntlet scoring (acknowledge → explore → respond)
+│   ├── gamification.ts  # pure XP / levels / achievements engine
+│   ├── coach.ts         # pure adaptive next-step + skill banding
 │   ├── moods.ts         # prospect mood selection
 │   ├── storage.ts       # persistence + backup/restore
 │   ├── exporters.ts     # CSV and JSON export
@@ -263,7 +292,8 @@ src/
 │   └── supabase.ts      # client + anonymous device id
 ├── components/CloudSync.tsx  # header sync dropdown (hidden in demo mode)
 ├── i18n/                # UI strings in PT / IT / EN
-└── pages/               # Home, Call, Drill, Scorecard, Progress, Library
+└── pages/               # Home, Call, Drill, Scorecard, Progress, Library, Legal
+public/                  # PWA manifest, service worker, app icon
 supabase/
 ├── functions/           # roleplay, evaluate, _shared (CLI deploys)
 ├── dashboard-deploy/    # same functions, single-file, for the web dashboard
@@ -418,7 +448,11 @@ push.
       full PT/IT/EN localisation.
 - [x] **Phase 5 — Accounts.** Opt-in cross-device sync via Supabase magic link
       (see [Cross-device sync](#cross-device-sync-optional)); pressure mode for the drill.
+- [x] **Phase 6 — Engagement & polish.** Gamification (levels, XP, achievements), adaptive
+      next-step coach, skill matrix, battle cards, route code-splitting, installable PWA
+      with offline shell, WCAG pass, and Privacy/Terms pages.
 - [ ] Premium TTS (ElevenLabs / OpenAI) for a less robotic prospect
+- [ ] Server-side speech-to-text so voice works in any browser (incl. Brave)
 - [ ] Generate a product card from a URL, so a stranger can train on their own product
 - [ ] AE modes: guided demo and procurement negotiation
 
