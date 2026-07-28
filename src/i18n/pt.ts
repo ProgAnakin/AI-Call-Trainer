@@ -78,6 +78,12 @@ export const pt = {
   'call.outcomeRejected': 'Não avançou / recusou',
   'call.outcomeAbandoned': 'Só encerrei o treino',
   'call.editHint': 'Edite a transcrição antes de enviar, se precisar.',
+  'call.micBlocked': 'Microfone bloqueado. Clique no 🔒 na barra de endereço e permita o microfone.',
+  'call.micNoSpeech': 'Não captei áudio. Segure o botão e fale perto do microfone.',
+  'call.micNoMic': 'Nenhum microfone encontrado. Conecte um microfone e tente de novo.',
+  'call.micNetwork': 'Falha de rede no reconhecimento de voz. Verifique a conexão.',
+  'call.micFailed': 'Não consegui iniciar o microfone. Tente de novo ou use o modo texto.',
+  'call.switchToText': '⌨️ Mudar para texto',
 
   // Scorecard
   'score.title': 'Scorecard',
