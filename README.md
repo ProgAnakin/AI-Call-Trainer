@@ -31,6 +31,7 @@ objection-by-objection breakdown, and one thing to focus on next time.
 - [Scoring model](#scoring-model)
 - [Voice implementation notes](#voice-implementation-notes)
 - [Your data](#your-data)
+- [Cross-device sync (optional)](#cross-device-sync-optional)
 - [Testing](#testing)
 - [Roadmap](#roadmap)
 - [License](#license)
@@ -94,6 +95,10 @@ Rapid-fire objection practice — the drill an SDR actually repeats daily. Real 
 from the product library come at you one at a time; you answer, get an **instant score**
 (acknowledge → explore → respond), and see the **model answer** to compare against. Ends
 with an average, a per-objection breakdown, and a personal best per product.
+
+Optional **pressure mode** puts a 45-second countdown on each objection — run out of time
+and the answer auto-submits, exactly like freezing on a live call. Great for building the
+reflex to respond fast instead of overthinking.
 
 Runs entirely client-side: **zero API cost and no latency**, which is what makes rapid-fire
 viable.
@@ -253,13 +258,16 @@ src/
 │   ├── moods.ts         # prospect mood selection
 │   ├── storage.ts       # persistence + backup/restore
 │   ├── exporters.ts     # CSV and JSON export
+│   ├── auth.ts          # Supabase Auth wrapper (magic link) for optional sync
+│   ├── cloudSync.ts     # push/pull backup to the cloud (merge-by-id)
 │   └── supabase.ts      # client + anonymous device id
+├── components/CloudSync.tsx  # header sync dropdown (hidden in demo mode)
 ├── i18n/                # UI strings in PT / IT / EN
 └── pages/               # Home, Call, Drill, Scorecard, Progress, Library
 supabase/
 ├── functions/           # roleplay, evaluate, _shared (CLI deploys)
 ├── dashboard-deploy/    # same functions, single-file, for the web dashboard
-└── migrations/          # schema, RLS and seed
+└── migrations/          # 0001 schema+RLS+seed, 0002 user_backups (sync)
 ```
 
 ### Call state machine
@@ -339,6 +347,50 @@ From the Progress page you can:
 - **Export a JSON backup** and **restore it** — on another device, or after clearing your
   browser. Restore merges by id, so importing the same file twice never duplicates rows.
 
+For a hands-off version of the same thing, see **cross-device sync** below.
+
+---
+
+## Cross-device sync (optional)
+
+Backup/restore is manual. If you want your progress to follow you across devices
+automatically, the header shows a **☁ Sync** button — but only when Supabase is configured
+(in demo mode there's no cloud, so it stays hidden and the app is unaffected).
+
+How it works:
+
+- **Sign in with a magic link.** Enter your email, click the link Supabase sends, and you're
+  in — no password. Auth is powered by Supabase Auth.
+- **Save to cloud** uploads your whole local backup (the same object as the JSON export) into
+  a private `user_backups` row keyed to your user id.
+- **Pull from cloud** merges that row back into this device's `localStorage` — merge-by-id,
+  so local-only sessions are never lost and pulling twice never duplicates anything.
+
+`localStorage` stays the source of truth on each device; the cloud is just the shared copy
+between your devices. Sync is entirely opt-in and additive — it touches a brand-new table and
+nothing in the original schema, so it's safe to add to an existing deployment.
+
+### Enabling it (two manual Supabase steps)
+
+Sync rides on the same Supabase project you already use for live Claude mode. Beyond running
+the migration, it needs two one-time settings in the Supabase dashboard:
+
+1. **Run the migration** `supabase/migrations/0002_user_backups.sql` (Dashboard → SQL Editor,
+   paste and run — or `supabase db push`). It creates the `user_backups` table with
+   row-level security scoped to `auth.uid()`, so each user can only ever read or write their
+   own row.
+2. **Allow the redirect URL.** Dashboard → *Authentication → URL Configuration* → add your
+   site URL (e.g. `https://your-app.vercel.app`, and `http://localhost:5173` for local dev)
+   to **Site URL / Redirect URLs**. The magic link refuses to redirect anywhere not on this
+   allowlist.
+3. **Email delivery.** The built-in email provider works out of the box for low volume
+   (rate-limited). For anything real, Dashboard → *Authentication → Providers → Email* and
+   plug in your own SMTP so the links actually arrive.
+
+> Because the anon key is public by design, RLS is what protects the data: a client can only
+> touch the row where `auth.uid() = user_id`. Nothing in a user's backup is readable by
+> anyone else.
+
 ---
 
 ## Testing
@@ -364,7 +416,8 @@ push.
       objection map, meeting rate, weakest-area spotlight, CSV export.
 - [x] **Phase 4 — Scale.** Library CRUD, Objection Gauntlet, prospect moods, onboarding,
       full PT/IT/EN localisation.
-- [ ] Accounts and cross-device sync (Supabase magic link) — today progress is per-browser
+- [x] **Phase 5 — Accounts.** Opt-in cross-device sync via Supabase magic link
+      (see [Cross-device sync](#cross-device-sync-optional)); pressure mode for the drill.
 - [ ] Premium TTS (ElevenLabs / OpenAI) for a less robotic prospect
 - [ ] Generate a product card from a URL, so a stranger can train on their own product
 - [ ] AE modes: guided demo and procurement negotiation

@@ -10,6 +10,7 @@ import { Progress } from '@/pages/Progress';
 import { Library } from '@/pages/Library';
 import { Drill } from '@/pages/Drill';
 import { Onboarding } from '@/components/Onboarding';
+import { CloudSync } from '@/components/CloudSync';
 
 function Nav() {
   const { t, lang, setLang } = useT();
@@ -69,6 +70,7 @@ function Nav() {
               </button>
             ))}
           </div>
+          <CloudSync />
         </div>
       </div>
     </header>

@@ -49,7 +49,10 @@ export function Home() {
                       {persona.company_profile}
                     </p>
                   </div>
-                  <span className="text-xl" title={s.language}>
+                  <span
+                    className="cursor-help text-xl"
+                    title={`${t('home.callLangTip')} (${s.language})`}
+                  >
                     {LANGUAGE_FLAGS[s.language]}
                   </span>
                 </div>
