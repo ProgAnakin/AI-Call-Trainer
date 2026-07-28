@@ -312,4 +312,12 @@ export const en: typeof pt = {
   'legal.updated': 'Updated {date}',
   'legal.privacy': 'Privacy Policy',
   'legal.terms': 'Terms of Use',
+
+  // Battle card / playbook
+  'battle.title': 'Battle card',
+  'battle.hint': 'Your reference ammo. Peek if you need it — on a real call you would have this handy too.',
+  'battle.valueProps': 'Value props',
+  'battle.objections': 'Objections → answer',
+  'battle.competitors': 'Competitors',
+  'battle.pricing': 'Pricing',
 };

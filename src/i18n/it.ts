@@ -313,4 +313,12 @@ export const it: typeof pt = {
   'legal.updated': 'Aggiornato il {date}',
   'legal.privacy': 'Informativa sulla privacy',
   'legal.terms': 'Termini di servizio',
+
+  // Battle card / playbook
+  'battle.title': 'Battle card',
+  'battle.hint': 'Le tue munizioni di riferimento. Consultale se serve — anche in una call vera le avresti a portata di mano.',
+  'battle.valueProps': 'Proposta di valore',
+  'battle.objections': 'Obiezioni → risposta',
+  'battle.competitors': 'Concorrenti',
+  'battle.pricing': 'Prezzo',
 };

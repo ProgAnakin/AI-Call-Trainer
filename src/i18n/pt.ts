@@ -320,4 +320,12 @@ export const pt = {
   'legal.updated': 'Atualizado em {date}',
   'legal.privacy': 'Política de Privacidade',
   'legal.terms': 'Termos de Uso',
+
+  // Battle card / playbook
+  'battle.title': 'Battle card',
+  'battle.hint': 'Sua munição de referência. Consulte se precisar — no telefone real você também teria isso à mão.',
+  'battle.valueProps': 'Proposta de valor',
+  'battle.objections': 'Objeções → resposta',
+  'battle.competitors': 'Concorrentes',
+  'battle.pricing': 'Preço',
 };
