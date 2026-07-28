@@ -246,6 +246,11 @@ export function Call() {
                   ⌨️ {t('briefing.mode.text')}
                 </Button>
               </div>
+              {mode === 'voice' && speech.supported && (
+                <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                  {t('briefing.voiceBrowserHint')}
+                </p>
+              )}
               {mode === 'voice' && speech.supported && speech.voices.length > 0 && (
                 <div className="mt-3">
                   <Label>{t('briefing.voicePick')}</Label>

@@ -41,6 +41,7 @@ export const it: typeof pt = {
   'briefing.mode.voice': 'Voce',
   'briefing.mode.text': 'Testo',
   'briefing.voiceUnsupported': 'Voce non disponibile in questo browser (usa Chrome/Edge). Si continua via testo.',
+  'briefing.voiceBrowserHint': '🎙️ La voce usa il riconoscimento di Chrome/Edge. Su Brave o Safari non funziona — usa la modalità testo o apri in Chrome.',
   'briefing.startCall': 'Chiama ora',
   'briefing.minutes': '{m} min',
   'briefing.voicePick': 'Voce del prospect (TTS)',
