@@ -41,6 +41,7 @@ export const en: typeof pt = {
   'briefing.mode.voice': 'Voice',
   'briefing.mode.text': 'Text',
   'briefing.voiceUnsupported': 'Voice unavailable in this browser (use Chrome/Edge). Falling back to text.',
+  'briefing.voiceBrowserHint': '🎙️ Voice uses Chrome/Edge speech recognition. It does not work in Brave or Safari — use text mode or open in Chrome.',
   'briefing.startCall': 'Dial now',
   'briefing.minutes': '{m} min',
   'briefing.voicePick': 'Prospect voice (TTS)',
