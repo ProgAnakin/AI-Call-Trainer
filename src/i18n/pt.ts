@@ -311,4 +311,7 @@ export const pt = {
   'skill.level.developing': 'Em desenvolvimento',
   'skill.level.proficient': 'Proficiente',
   'skill.level.advanced': 'Avançado',
+
+  // Acessibilidade
+  'a11y.skip': 'Pular para o conteúdo',
 };

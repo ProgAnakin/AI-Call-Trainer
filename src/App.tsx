@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import { clsx } from 'clsx';
 import { I18nProvider, useT } from '@/i18n';
 import { isDemoMode } from '@/lib/api';
@@ -16,6 +17,19 @@ const Scorecard = lazy(() => import('@/pages/Scorecard').then((m) => ({ default:
 const Progress = lazy(() => import('@/pages/Progress').then((m) => ({ default: m.Progress })));
 const Library = lazy(() => import('@/pages/Library').then((m) => ({ default: m.Library })));
 const Drill = lazy(() => import('@/pages/Drill').then((m) => ({ default: m.Drill })));
+
+/** Link "pular para o conteúdo" — invisível até receber foco por teclado. */
+function SkipLink() {
+  const { t } = useT();
+  return (
+    <a
+      href="#main"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+    >
+      {t('a11y.skip')}
+    </a>
+  );
+}
 
 function Nav() {
   const { t, lang, setLang } = useT();
@@ -94,22 +108,26 @@ function RouteFallback() {
 export default function App() {
   return (
     <I18nProvider>
-      <BrowserRouter>
-        <Onboarding />
-        <Nav />
-        <main>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/drill" element={<Drill />} />
-              <Route path="/call/:scenarioId" element={<Call />} />
-              <Route path="/scorecard/:sessionId" element={<Scorecard />} />
-              <Route path="/progress" element={<Progress />} />
-              <Route path="/library" element={<Library />} />
-            </Routes>
-          </Suspense>
-        </main>
-      </BrowserRouter>
+      {/* reducedMotion="user" faz TODO framer-motion respeitar o SO do usuário. */}
+      <MotionConfig reducedMotion="user">
+        <BrowserRouter>
+          <SkipLink />
+          <Onboarding />
+          <Nav />
+          <main id="main" tabIndex={-1} className="focus:outline-none">
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/drill" element={<Drill />} />
+                <Route path="/call/:scenarioId" element={<Call />} />
+                <Route path="/scorecard/:sessionId" element={<Scorecard />} />
+                <Route path="/progress" element={<Progress />} />
+                <Route path="/library" element={<Library />} />
+              </Routes>
+            </Suspense>
+          </main>
+        </BrowserRouter>
+      </MotionConfig>
     </I18nProvider>
   );
 }

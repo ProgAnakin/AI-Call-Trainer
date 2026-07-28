@@ -303,4 +303,7 @@ export const en: typeof pt = {
   'skill.level.developing': 'Developing',
   'skill.level.proficient': 'Proficient',
   'skill.level.advanced': 'Advanced',
+
+  // Accessibility
+  'a11y.skip': 'Skip to content',
 };
