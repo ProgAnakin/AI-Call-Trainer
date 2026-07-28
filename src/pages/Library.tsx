@@ -12,6 +12,7 @@ import {
 import { ProductForm } from '@/components/library/ProductForm';
 import { PersonaForm } from '@/components/library/PersonaForm';
 import { ScenarioBuilder } from '@/components/library/ScenarioBuilder';
+import { BattleCard } from '@/components/BattleCard';
 import { Badge, Button, Card } from '@/components/ui';
 import { useT } from '@/i18n';
 import { clsx } from 'clsx';
@@ -121,6 +122,16 @@ export function Library() {
                 </Badge>
               </div>
               <p className="line-clamp-2 text-xs text-slate-400">{p.one_liner}</p>
+
+              <details className="rounded-lg border border-slate-800 bg-surface">
+                <summary className="cursor-pointer select-none px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200">
+                  📋 {t('battle.title')}
+                </summary>
+                <div className="border-t border-slate-800 px-3 py-2">
+                  <BattleCard product={p} />
+                </div>
+              </details>
+
               {p.custom && (
                 <div className="mt-auto flex gap-2 pt-1">
                   <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => setEditing(p)}>

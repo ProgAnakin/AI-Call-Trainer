@@ -1,16 +1,37 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import { clsx } from 'clsx';
 import { I18nProvider, useT } from '@/i18n';
 import { isDemoMode } from '@/lib/api';
 import type { UiLanguage } from '@/types';
-import { Home } from '@/pages/Home';
-import { Call } from '@/pages/Call';
-import { Scorecard } from '@/pages/Scorecard';
-import { Progress } from '@/pages/Progress';
-import { Library } from '@/pages/Library';
-import { Drill } from '@/pages/Drill';
 import { Onboarding } from '@/components/Onboarding';
 import { CloudSync } from '@/components/CloudSync';
+import { Footer } from '@/components/Footer';
+import { Waveform } from '@/components/call/Waveform';
+
+// Cada rota vira seu próprio chunk — só a página aberta é baixada. O grosso do
+// peso (framer-motion na call, o editor da biblioteca) sai do carregamento inicial.
+const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })));
+const Call = lazy(() => import('@/pages/Call').then((m) => ({ default: m.Call })));
+const Scorecard = lazy(() => import('@/pages/Scorecard').then((m) => ({ default: m.Scorecard })));
+const Progress = lazy(() => import('@/pages/Progress').then((m) => ({ default: m.Progress })));
+const Library = lazy(() => import('@/pages/Library').then((m) => ({ default: m.Library })));
+const Drill = lazy(() => import('@/pages/Drill').then((m) => ({ default: m.Drill })));
+const Legal = lazy(() => import('@/pages/Legal').then((m) => ({ default: m.Legal })));
+
+/** Link "pular para o conteúdo" — invisível até receber foco por teclado. */
+function SkipLink() {
+  const { t } = useT();
+  return (
+    <a
+      href="#main"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+    >
+      {t('a11y.skip')}
+    </a>
+  );
+}
 
 function Nav() {
   const { t, lang, setLang } = useT();
@@ -77,23 +98,40 @@ function Nav() {
   );
 }
 
+/** Placeholder enquanto o chunk da rota carrega — leve e centralizado. */
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-live="polite">
+      <Waveform active color="bg-accent" />
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <I18nProvider>
-      <BrowserRouter>
-        <Onboarding />
-        <Nav />
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/drill" element={<Drill />} />
-            <Route path="/call/:scenarioId" element={<Call />} />
-            <Route path="/scorecard/:sessionId" element={<Scorecard />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/library" element={<Library />} />
-          </Routes>
-        </main>
-      </BrowserRouter>
+      {/* reducedMotion="user" faz TODO framer-motion respeitar o SO do usuário. */}
+      <MotionConfig reducedMotion="user">
+        <BrowserRouter>
+          <SkipLink />
+          <Onboarding />
+          <Nav />
+          <main id="main" tabIndex={-1} className="focus:outline-none">
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/drill" element={<Drill />} />
+                <Route path="/call/:scenarioId" element={<Call />} />
+                <Route path="/scorecard/:sessionId" element={<Scorecard />} />
+                <Route path="/progress" element={<Progress />} />
+                <Route path="/library" element={<Library />} />
+                <Route path="/legal" element={<Legal />} />
+              </Routes>
+            </Suspense>
+          </main>
+          <Footer />
+        </BrowserRouter>
+      </MotionConfig>
     </I18nProvider>
   );
 }

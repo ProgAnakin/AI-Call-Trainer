@@ -1,16 +1,20 @@
 import { useProgress } from '@/hooks/useProgress';
+import { useGamification } from '@/hooks/useGamification';
 import { ProgressChart } from '@/components/dashboard/ProgressChart';
 import { SessionHistory } from '@/components/dashboard/SessionHistory';
 import { StreakBadge } from '@/components/dashboard/StreakBadge';
 import { DataPanel } from '@/components/dashboard/DataPanel';
+import { LevelCard } from '@/components/dashboard/LevelCard';
+import { Achievements } from '@/components/dashboard/Achievements';
+import { SkillMatrix } from '@/components/dashboard/SkillMatrix';
 import { Card } from '@/components/ui';
 import { FRAMEWORKS } from '@/data/frameworks';
 import { useT } from '@/i18n';
-import { clsx } from 'clsx';
 
 export function Progress() {
   const { t, lang } = useT();
   const data = useProgress();
+  const gam = useGamification();
 
   const criterionLabel = (key: string): string => {
     for (const fw of Object.values(FRAMEWORKS)) {
@@ -33,6 +37,10 @@ export function Progress() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold">{t('progress.title')}</h1>
+
+      <div className="mb-6">
+        <LevelCard gam={gam} />
+      </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card className="flex items-center justify-between">
@@ -91,29 +99,14 @@ export function Progress() {
       )}
 
       {data.byCriterion.length > 0 && (
-        <Card className="mb-6">
-          <h2 className="mb-3 text-sm font-semibold text-slate-400">{t('progress.byCriterion')}</h2>
-          <div className="space-y-2">
-            {data.byCriterion.map((c) => (
-              <div key={c.key} className="flex items-center gap-3">
-                <span className="w-44 shrink-0 truncate text-xs text-slate-400">
-                  {criterionLabel(c.key)}
-                </span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
-                  <div
-                    className={clsx(
-                      'h-full rounded-full',
-                      c.avg >= 7.5 ? 'bg-emerald-500' : c.avg >= 5 ? 'bg-amber-500' : 'bg-red-500',
-                    )}
-                    style={{ width: `${c.avg * 10}%` }}
-                  />
-                </div>
-                <span className="w-10 shrink-0 text-right font-mono text-xs">{c.avg}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
+        <div className="mb-6">
+          <SkillMatrix items={data.byCriterion} label={criterionLabel} />
+        </div>
       )}
+
+      <div className="mb-6">
+        <Achievements items={gam.achievements} />
+      </div>
 
       <Card className="mb-6">
         <h2 className="mb-2 text-sm font-semibold text-slate-400">{t('progress.history')}</h2>

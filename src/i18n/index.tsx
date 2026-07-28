@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { UiLanguage } from '@/types';
 import { pt } from './pt';
 import { it } from './it';
@@ -23,6 +23,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem(LS_KEY) as UiLanguage | null;
     return saved && saved in DICTS ? saved : 'pt';
   });
+
+  // Mantém <html lang> em sincronia — leitores de tela usam isso para a pronúncia.
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const value = useMemo<I18nCtx>(
     () => ({

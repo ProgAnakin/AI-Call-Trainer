@@ -9,6 +9,25 @@
   body {
     @apply min-h-screen;
   }
+
+  /* Foco visível por teclado — anel de destaque em qualquer elemento focável.
+     :focus-visible só dispara na navegação por teclado, não no clique de mouse. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-surface;
+  }
+}
+
+/* Respeita quem pede menos movimento (conforto vestibular/foco): neutraliza
+   animações e transições sem quebrar o layout. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @layer utilities {

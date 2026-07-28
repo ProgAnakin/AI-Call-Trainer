@@ -18,6 +18,7 @@ import {
 } from '@/components/ui';
 import { Timer } from '@/components/call/Timer';
 import { Waveform } from '@/components/call/Waveform';
+import { BattleCard } from '@/components/BattleCard';
 import { PushToTalk } from '@/components/call/PushToTalk';
 import { TranscriptLive } from '@/components/call/TranscriptLive';
 import { useT, type TKey } from '@/i18n';
@@ -209,6 +210,16 @@ export function Call() {
                 {product.name} · {product.vendor}
               </p>
               <p className="mt-1 text-sm text-slate-400">{product.one_liner}</p>
+
+              <details className="mt-3 rounded-lg border border-slate-800 bg-surface-overlay/40">
+                <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200">
+                  📋 {t('battle.title')}
+                </summary>
+                <div className="border-t border-slate-800 px-3 py-3">
+                  <p className="mb-2 text-[11px] text-slate-500">{t('battle.hint')}</p>
+                  <BattleCard product={product} />
+                </div>
+              </details>
             </div>
 
             <div>
