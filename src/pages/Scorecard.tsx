@@ -11,6 +11,7 @@ import {
 } from '@/lib/storage';
 import { getFramework } from '@/data/frameworks';
 import { computeMetrics } from '@/lib/metrics';
+import { xpOfCall } from '@/lib/gamification';
 import { isDemoMode } from '@/lib/api';
 import { ScoreReveal } from '@/components/scorecard/ScoreReveal';
 import { CriterionCard } from '@/components/scorecard/CriterionCard';
@@ -81,6 +82,13 @@ export function Scorecard() {
     scenario?.language ?? 'pt-BR',
   );
   const framework = getFramework(evaluation.framework);
+  const xpEarned = xpOfCall({
+    score: evaluation.overall_score,
+    meetingBooked: session.outcome === 'meeting_booked',
+    language: scenario?.language ?? 'pt-BR',
+    difficulty: scenario?.difficulty ?? 1,
+    objectionAllHandled: false,
+  });
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
@@ -101,9 +109,22 @@ export function Scorecard() {
         )}
       </div>
 
-      <div className="mb-8 flex justify-center">
+      <div className="mb-3 flex justify-center">
         <ScoreReveal score={evaluation.overall_score} />
       </div>
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="mb-8 flex justify-center"
+      >
+        <Link
+          to="/progress"
+          className="rounded-full bg-accent/15 px-3 py-1 text-sm font-semibold text-accent-soft transition-colors hover:bg-accent/25"
+        >
+          ⚡ {t('gam.xpEarned', { xp: xpEarned })}
+        </Link>
+      </motion.div>
 
       {/* Um aviso único, em vez de repetir "modo demo" em cada critério. */}
       {isDemoMode() && (

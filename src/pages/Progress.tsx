@@ -1,8 +1,11 @@
 import { useProgress } from '@/hooks/useProgress';
+import { useGamification } from '@/hooks/useGamification';
 import { ProgressChart } from '@/components/dashboard/ProgressChart';
 import { SessionHistory } from '@/components/dashboard/SessionHistory';
 import { StreakBadge } from '@/components/dashboard/StreakBadge';
 import { DataPanel } from '@/components/dashboard/DataPanel';
+import { LevelCard } from '@/components/dashboard/LevelCard';
+import { Achievements } from '@/components/dashboard/Achievements';
 import { Card } from '@/components/ui';
 import { FRAMEWORKS } from '@/data/frameworks';
 import { useT } from '@/i18n';
@@ -11,6 +14,7 @@ import { clsx } from 'clsx';
 export function Progress() {
   const { t, lang } = useT();
   const data = useProgress();
+  const gam = useGamification();
 
   const criterionLabel = (key: string): string => {
     for (const fw of Object.values(FRAMEWORKS)) {
@@ -33,6 +37,10 @@ export function Progress() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold">{t('progress.title')}</h1>
+
+      <div className="mb-6">
+        <LevelCard gam={gam} />
+      </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card className="flex items-center justify-between">
@@ -114,6 +122,10 @@ export function Progress() {
           </div>
         </Card>
       )}
+
+      <div className="mb-6">
+        <Achievements items={gam.achievements} />
+      </div>
 
       <Card className="mb-6">
         <h2 className="mb-2 text-sm font-semibold text-slate-400">{t('progress.history')}</h2>
