@@ -1,3 +1,4 @@
+import { forwardRef, useRef } from 'react';
 import { clsx } from 'clsx';
 import { useT } from '@/i18n';
 
@@ -9,41 +10,65 @@ interface Props {
 }
 
 /**
- * Botão push-to-talk: segure (mouse/touch/tecla espaço) para falar,
- * solte para enviar. Mais confiável que reconhecimento contínuo.
+ * Botão push-to-talk: segure (mouse/touch/tecla espaço) para falar, solte para
+ * enviar. Usa Pointer Events com pointer capture — assim o "soltar" sempre volta
+ * para o botão mesmo se o cursor sair de cima dele, que era o motivo do gesto
+ * falhar no desktop com mouseup.
  */
-export function PushToTalk({ listening, disabled, onPress, onRelease }: Props) {
+export const PushToTalk = forwardRef<HTMLButtonElement, Props>(function PushToTalk(
+  { listening, disabled, onPress, onRelease },
+  ref,
+) {
   const { t } = useT();
+  // Garante que cada "press" tenha exatamente um "release", mesmo se o navegador
+  // disparar eventos de ponteiro e teclado para a mesma interação.
+  const activeRef = useRef(false);
+
+  const press = () => {
+    if (disabled || activeRef.current) return;
+    activeRef.current = true;
+    onPress();
+  };
+  const release = () => {
+    if (!activeRef.current) return;
+    activeRef.current = false;
+    onRelease();
+  };
+
   return (
     <div className="flex flex-col items-center gap-2">
       <button
+        ref={ref}
         type="button"
         disabled={disabled}
-        onMouseDown={onPress}
-        onMouseUp={onRelease}
-        onMouseLeave={() => listening && onRelease()}
-        onTouchStart={(e) => {
+        onPointerDown={(e) => {
           e.preventDefault();
-          onPress();
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+          press();
         }}
-        onTouchEnd={(e) => {
+        onPointerUp={(e) => {
           e.preventDefault();
-          onRelease();
+          e.currentTarget.releasePointerCapture?.(e.pointerId);
+          release();
         }}
+        onPointerCancel={release}
         onKeyDown={(e) => {
-          if (e.key === ' ' && !e.repeat) {
+          if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) {
             e.preventDefault();
-            onPress();
+            press();
           }
         }}
         onKeyUp={(e) => {
-          if (e.key === ' ') {
+          if (e.key === ' ' || e.key === 'Enter') {
             e.preventDefault();
-            onRelease();
+            release();
           }
         }}
+        // Rede de segurança: se o foco sair no meio do hold (ex.: popup do
+        // navegador), solta em vez de ficar travado "ouvindo".
+        onBlur={release}
         className={clsx(
-          'relative flex h-20 w-20 items-center justify-center rounded-full text-3xl transition-all focus:outline-none focus:ring-4 focus:ring-accent/40',
+          'relative flex h-20 w-20 touch-none select-none items-center justify-center rounded-full text-3xl transition-all focus:outline-none focus:ring-4 focus:ring-accent/40',
           listening
             ? 'scale-110 bg-red-500 shadow-xl shadow-red-500/40'
             : 'bg-accent shadow-xl shadow-accent/30 hover:bg-accent-soft',
@@ -62,4 +87,4 @@ export function PushToTalk({ listening, disabled, onPress, onRelease }: Props) {
       </p>
     </div>
   );
-}
+});

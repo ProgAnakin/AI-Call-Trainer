@@ -75,6 +75,12 @@ export const it: typeof pt = {
   'call.outcomeRejected': 'Non è andata avanti / ha rifiutato',
   'call.outcomeAbandoned': 'Ho solo chiuso l’allenamento',
   'call.editHint': 'Modifica la trascrizione prima di inviare, se serve.',
+  'call.micBlocked': 'Microfono bloccato. Clicca sul 🔒 nella barra degli indirizzi e consenti il microfono.',
+  'call.micNoSpeech': 'Non ho captato audio. Tieni premuto il pulsante e parla vicino al microfono.',
+  'call.micNoMic': 'Nessun microfono trovato. Collega un microfono e riprova.',
+  'call.micNetwork': 'Errore di rete nel riconoscimento vocale. Controlla la connessione.',
+  'call.micFailed': 'Impossibile avviare il microfono. Riprova o usa la modalità testo.',
+  'call.switchToText': '⌨️ Passa al testo',
 
   'score.title': 'Scorecard',
   'score.overall': 'Voto complessivo',

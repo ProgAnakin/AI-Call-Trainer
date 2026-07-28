@@ -74,6 +74,12 @@ export const en: typeof pt = {
   'call.outcomeRejected': 'Went nowhere / declined',
   'call.outcomeAbandoned': 'Just ended the practice',
   'call.editHint': 'Edit the transcript before sending if needed.',
+  'call.micBlocked': 'Microphone blocked. Click the 🔒 in the address bar and allow the microphone.',
+  'call.micNoSpeech': "Didn't catch any audio. Hold the button and speak close to the mic.",
+  'call.micNoMic': 'No microphone found. Connect a mic and try again.',
+  'call.micNetwork': 'Network error in speech recognition. Check your connection.',
+  'call.micFailed': "Couldn't start the microphone. Try again or use text mode.",
+  'call.switchToText': '⌨️ Switch to text',
 
   'score.title': 'Scorecard',
   'score.overall': 'Overall score',

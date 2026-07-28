@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { SessionMode } from '@/types';
 import { getPersona, getProduct, getScenario } from '@/lib/storage';
 import { useCallSession } from '@/hooks/useCallSession';
-import { useSpeech } from '@/hooks/useSpeech';
+import { useSpeech, type SpeechError } from '@/hooks/useSpeech';
 import { MOOD_EMOJI, moodLabelKey, pickMood } from '@/lib/moods';
 import {
   Badge,
@@ -20,7 +20,16 @@ import { Timer } from '@/components/call/Timer';
 import { Waveform } from '@/components/call/Waveform';
 import { PushToTalk } from '@/components/call/PushToTalk';
 import { TranscriptLive } from '@/components/call/TranscriptLive';
-import { useT } from '@/i18n';
+import { useT, type TKey } from '@/i18n';
+
+/** Código de erro do microfone → chave i18n da mensagem exibida. */
+const MIC_ERROR_KEY: Record<SpeechError, TKey> = {
+  blocked: 'call.micBlocked',
+  'no-speech': 'call.micNoSpeech',
+  'no-mic': 'call.micNoMic',
+  network: 'call.micNetwork',
+  failed: 'call.micFailed',
+};
 
 export function Call() {
   const { scenarioId } = useParams<{ scenarioId: string }>();
@@ -42,6 +51,7 @@ export function Call() {
   const [draft, setDraft] = useState('');
   const [pendingVoiceText, setPendingVoiceText] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const talkRef = useRef<HTMLButtonElement>(null);
 
   // Sem suporte a voz → força modo texto (fallback automático).
   useEffect(() => {
@@ -58,6 +68,15 @@ export function Call() {
   useEffect(() => {
     if (call.state === 'waiting_input') inputRef.current?.focus();
   }, [call.state]);
+
+  // Modo voz: assim que o prospect termina de falar, foca o botão para o
+  // push-to-talk pela barra de espaço funcionar sem precisar clicar antes.
+  useEffect(() => {
+    if (call.state === 'listening' && mode === 'voice' && pendingVoiceText === null) {
+      const id = setTimeout(() => talkRef.current?.focus(), 60);
+      return () => clearTimeout(id);
+    }
+  }, [call.state, mode, pendingVoiceText]);
 
   if (!scenario || !persona || !product) {
     return (
@@ -107,6 +126,13 @@ export function Call() {
     if (!text) return;
     setDraft('');
     await sendLine(text);
+  };
+
+  const startCall = async () => {
+    // Pré-autoriza o microfone AGORA (dentro do clique) para o popup do
+    // navegador não interromper o primeiro push-to-talk mais tarde.
+    if (mode === 'voice') await speech.warmupMic();
+    await call.start(mode);
   };
 
   const hangup = async () => {
@@ -235,7 +261,7 @@ export function Call() {
               )}
             </div>
 
-            <Button className="w-full py-3 text-base" onClick={() => void call.start(mode)}>
+            <Button className="w-full py-3 text-base" onClick={() => void startCall()}>
               📞 {t('briefing.startCall')}
             </Button>
           </Card>
@@ -386,14 +412,34 @@ export function Call() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex justify-center"
+              className="flex flex-col items-center gap-2"
             >
               <PushToTalk
+                ref={talkRef}
                 listening={speech.listening}
                 disabled={busy}
                 onPress={speech.startListening}
                 onRelease={() => void handleTalkRelease()}
               />
+              {speech.error && (
+                <div className="flex flex-col items-center gap-1">
+                  <p className="max-w-xs text-center text-xs text-amber-400">
+                    {t(MIC_ERROR_KEY[speech.error])}
+                  </p>
+                  {speech.error !== 'no-speech' && (
+                    <button
+                      type="button"
+                      className="text-xs text-accent-soft underline"
+                      onClick={() => {
+                        speech.clearError();
+                        setMode('text');
+                      }}
+                    >
+                      {t('call.switchToText')}
+                    </button>
+                  )}
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
