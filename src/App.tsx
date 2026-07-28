@@ -7,6 +7,7 @@ import { isDemoMode } from '@/lib/api';
 import type { UiLanguage } from '@/types';
 import { Onboarding } from '@/components/Onboarding';
 import { CloudSync } from '@/components/CloudSync';
+import { Footer } from '@/components/Footer';
 import { Waveform } from '@/components/call/Waveform';
 
 // Cada rota vira seu próprio chunk — só a página aberta é baixada. O grosso do
@@ -17,6 +18,7 @@ const Scorecard = lazy(() => import('@/pages/Scorecard').then((m) => ({ default:
 const Progress = lazy(() => import('@/pages/Progress').then((m) => ({ default: m.Progress })));
 const Library = lazy(() => import('@/pages/Library').then((m) => ({ default: m.Library })));
 const Drill = lazy(() => import('@/pages/Drill').then((m) => ({ default: m.Drill })));
+const Legal = lazy(() => import('@/pages/Legal').then((m) => ({ default: m.Legal })));
 
 /** Link "pular para o conteúdo" — invisível até receber foco por teclado. */
 function SkipLink() {
@@ -123,9 +125,11 @@ export default function App() {
                 <Route path="/scorecard/:sessionId" element={<Scorecard />} />
                 <Route path="/progress" element={<Progress />} />
                 <Route path="/library" element={<Library />} />
+                <Route path="/legal" element={<Legal />} />
               </Routes>
             </Suspense>
           </main>
+          <Footer />
         </BrowserRouter>
       </MotionConfig>
     </I18nProvider>

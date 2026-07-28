@@ -306,4 +306,10 @@ export const en: typeof pt = {
 
   // Accessibility
   'a11y.skip': 'Skip to content',
+
+  // Legal
+  'legal.title': 'Privacy & Terms',
+  'legal.updated': 'Updated {date}',
+  'legal.privacy': 'Privacy Policy',
+  'legal.terms': 'Terms of Use',
 };

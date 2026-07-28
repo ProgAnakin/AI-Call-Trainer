@@ -314,4 +314,10 @@ export const pt = {
 
   // Acessibilidade
   'a11y.skip': 'Pular para o conteúdo',
+
+  // Legal
+  'legal.title': 'Privacidade & Termos',
+  'legal.updated': 'Atualizado em {date}',
+  'legal.privacy': 'Política de Privacidade',
+  'legal.terms': 'Termos de Uso',
 };

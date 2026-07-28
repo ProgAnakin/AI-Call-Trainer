@@ -307,4 +307,10 @@ export const it: typeof pt = {
 
   // Accessibilità
   'a11y.skip': 'Salta al contenuto',
+
+  // Legal
+  'legal.title': 'Privacy & Termini',
+  'legal.updated': 'Aggiornato il {date}',
+  'legal.privacy': 'Informativa sulla privacy',
+  'legal.terms': 'Termini di servizio',
 };
