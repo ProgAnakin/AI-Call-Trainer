@@ -42,7 +42,7 @@ export function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <Card className="flex h-full flex-col gap-3">
+              <Card className="flex h-full flex-col gap-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="font-semibold">

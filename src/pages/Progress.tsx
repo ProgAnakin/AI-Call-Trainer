@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useProgress } from '@/hooks/useProgress';
 import { useGamification } from '@/hooks/useGamification';
 import { ProgressChart } from '@/components/dashboard/ProgressChart';
@@ -7,7 +8,7 @@ import { DataPanel } from '@/components/dashboard/DataPanel';
 import { LevelCard } from '@/components/dashboard/LevelCard';
 import { Achievements } from '@/components/dashboard/Achievements';
 import { SkillMatrix } from '@/components/dashboard/SkillMatrix';
-import { Card } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { criterionLabel } from '@/data/frameworks';
 import { useT } from '@/i18n';
 
@@ -22,7 +23,14 @@ export function Progress() {
   if (data.totalSessions === 0) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16">
-        <p className="mb-6 text-center text-slate-400">{t('progress.empty')}</p>
+        <div className="mb-10 text-center">
+          <div className="mb-4 text-5xl" aria-hidden>📊</div>
+          <p className="mb-1 text-lg font-semibold text-slate-200">{t('progress.empty')}</p>
+          <p className="mb-6 text-sm text-slate-500">{t('progress.emptyHint')}</p>
+          <Link to="/">
+            <Button>{t('progress.emptyCta')} →</Button>
+          </Link>
+        </div>
         <DataPanel hasSessions={false} />
       </div>
     );

@@ -146,7 +146,9 @@ export const pt = {
   'progress.weekly': 'Evolução semanal',
   'progress.byCriterion': 'Média por critério',
   'progress.history': 'Histórico de sessões',
-  'progress.empty': 'Nenhuma sessão ainda. Faça sua primeira call!',
+  'progress.empty': 'Nenhuma sessão ainda',
+  'progress.emptyHint': 'Escolha um cenário, faça uma call e seu progresso aparece aqui.',
+  'progress.emptyCta': 'Fazer primeira call',
   'progress.viewScorecard': 'Ver scorecard',
 
   // Library
