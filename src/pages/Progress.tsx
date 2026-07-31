@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useProgress } from '@/hooks/useProgress';
 import { useGamification } from '@/hooks/useGamification';
 import { ProgressChart } from '@/components/dashboard/ProgressChart';
@@ -7,8 +8,8 @@ import { DataPanel } from '@/components/dashboard/DataPanel';
 import { LevelCard } from '@/components/dashboard/LevelCard';
 import { Achievements } from '@/components/dashboard/Achievements';
 import { SkillMatrix } from '@/components/dashboard/SkillMatrix';
-import { Card } from '@/components/ui';
-import { FRAMEWORKS } from '@/data/frameworks';
+import { Button, Card } from '@/components/ui';
+import { criterionLabel } from '@/data/frameworks';
 import { useT } from '@/i18n';
 
 export function Progress() {
@@ -16,19 +17,20 @@ export function Progress() {
   const data = useProgress();
   const gam = useGamification();
 
-  const criterionLabel = (key: string): string => {
-    for (const fw of Object.values(FRAMEWORKS)) {
-      const c = fw.criteria.find((c) => c.key === key);
-      if (c) return c.labels[lang];
-    }
-    return key;
-  };
+  const label = (key: string) => criterionLabel(key, lang);
 
   // Empty state ainda oferece o import — é justamente quando se restaura backup.
   if (data.totalSessions === 0) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16">
-        <p className="mb-6 text-center text-slate-400">{t('progress.empty')}</p>
+        <div className="mb-10 text-center">
+          <div className="mb-4 text-5xl" aria-hidden>📊</div>
+          <p className="mb-1 text-lg font-semibold text-slate-200">{t('progress.empty')}</p>
+          <p className="mb-6 text-sm text-slate-500">{t('progress.emptyHint')}</p>
+          <Link to="/">
+            <Button>{t('progress.emptyCta')} →</Button>
+          </Link>
+        </div>
         <DataPanel hasSessions={false} />
       </div>
     );
@@ -79,7 +81,7 @@ export function Progress() {
                 ↯ {t('progress.weakest')}
               </p>
               <p className="mt-1 text-lg font-semibold text-slate-100">
-                {criterionLabel(data.weakestCriterion.key)}{' '}
+                {label(data.weakestCriterion.key)}{' '}
                 <span className="font-mono text-sm text-amber-400">
                   {data.weakestCriterion.avg}/10
                 </span>
@@ -100,7 +102,7 @@ export function Progress() {
 
       {data.byCriterion.length > 0 && (
         <div className="mb-6">
-          <SkillMatrix items={data.byCriterion} label={criterionLabel} />
+          <SkillMatrix items={data.byCriterion} label={label} />
         </div>
       )}
 

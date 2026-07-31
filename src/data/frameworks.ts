@@ -1,4 +1,4 @@
-import type { CallType, FrameworkId } from '@/types';
+import type { CallType, FrameworkId, UiLanguage } from '@/types';
 
 export interface CriterionDef {
   key: string;
@@ -207,6 +207,15 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkDef> = {
 
 export function getFramework(id: FrameworkId): FrameworkDef {
   return FRAMEWORKS[id] ?? FRAMEWORKS.basic;
+}
+
+/** Rótulo localizado de um critério, procurado em todos os frameworks. */
+export function criterionLabel(key: string, lang: UiLanguage): string {
+  for (const fw of Object.values(FRAMEWORKS)) {
+    const c = fw.criteria.find((crit) => crit.key === key);
+    if (c) return c.labels[lang];
+  }
+  return key;
 }
 
 /**

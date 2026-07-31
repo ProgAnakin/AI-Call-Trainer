@@ -29,7 +29,7 @@ const XP_MEETING_BONUS = 25; // fechar um próximo passo vale mais que a nota
 const XP_HARD_BONUS = 10; // encarar cenário difícil (4-5) dá bônus
 
 /** XP de uma call: a nota + bônus por meeting e por dificuldade. */
-export function xpOfCall(c: CallRecord): number {
+export function xpOfCall(c: Pick<CallRecord, 'score' | 'meetingBooked' | 'difficulty'>): number {
   let xp = Math.max(0, Math.round(c.score));
   if (c.meetingBooked) xp += XP_MEETING_BONUS;
   if (c.difficulty >= 4) xp += XP_HARD_BONUS;

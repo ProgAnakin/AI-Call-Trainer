@@ -12,13 +12,16 @@ export function LevelCard({ gam }: { gam: Gamification }) {
     <Card className="bg-gradient-to-br from-indigo-950/40 to-surface">
       <div className="flex items-center gap-4">
         <div
-          className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-accent/20 text-accent-soft"
+          className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full"
+          style={{ background: `conic-gradient(#6366f1 ${level.progress * 360}deg, #1f2937 0deg)` }}
           aria-hidden
         >
-          <span className="text-[9px] font-semibold uppercase tracking-wider opacity-70">
-            {t('gam.lvl')}
-          </span>
-          <span className="font-mono text-2xl font-bold leading-none">{level.level}</span>
+          <div className="flex h-[52px] w-[52px] flex-col items-center justify-center rounded-full bg-surface text-accent-soft">
+            <span className="text-[8px] font-semibold uppercase tracking-wider opacity-70">
+              {t('gam.lvl')}
+            </span>
+            <span className="font-mono text-2xl font-bold leading-none">{level.level}</span>
+          </div>
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-bold text-slate-100">{t(level.titleKey as TKey)}</p>

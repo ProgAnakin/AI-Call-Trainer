@@ -140,7 +140,9 @@ export const en: typeof pt = {
   'progress.weekly': 'Weekly evolution',
   'progress.byCriterion': 'Average by criterion',
   'progress.history': 'Session history',
-  'progress.empty': 'No sessions yet. Make your first call!',
+  'progress.empty': 'No sessions yet',
+  'progress.emptyHint': 'Pick a scenario, make a call, and your progress shows up here.',
+  'progress.emptyCta': 'Make your first call',
   'progress.viewScorecard': 'View scorecard',
 
   'library.title': 'Library',

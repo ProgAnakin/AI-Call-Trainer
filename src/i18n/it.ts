@@ -141,7 +141,9 @@ export const it: typeof pt = {
   'progress.weekly': 'Evoluzione settimanale',
   'progress.byCriterion': 'Media per criterio',
   'progress.history': 'Storico sessioni',
-  'progress.empty': 'Nessuna sessione. Fai la tua prima call!',
+  'progress.empty': 'Ancora nessuna sessione',
+  'progress.emptyHint': 'Scegli uno scenario, fai una call e i tuoi progressi appariranno qui.',
+  'progress.emptyCta': 'Fai la prima call',
   'progress.viewScorecard': 'Vedi scorecard',
 
   'library.title': 'Libreria',
