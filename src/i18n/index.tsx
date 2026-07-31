@@ -21,7 +21,7 @@ const Ctx = createContext<I18nCtx | null>(null);
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<UiLanguage>(() => {
     const saved = localStorage.getItem(LS_KEY) as UiLanguage | null;
-    return saved && saved in DICTS ? saved : 'pt';
+    return saved && saved in DICTS ? saved : 'en';
   });
 
   // Mantém <html lang> em sincronia — leitores de tela usam isso para a pronúncia.

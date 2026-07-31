@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" width="1000" height="300" font-family="Inter, system-ui, sans-serif" role="img" aria-label="AI Call Trainer — treine cold calls, receba um scorecard de verdade">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" width="1000" height="300" font-family="Inter, system-ui, sans-serif" role="img" aria-label="AI Call Trainer — practise cold calls, get a real scorecard">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0f1117"/>
@@ -15,27 +15,27 @@
 
   <!-- Wordmark -->
   <text x="56" y="86" font-size="34" font-weight="800" fill="#f1f5f9">🎙️  AI Call Trainer</text>
-  <text x="58" y="124" font-size="18" fill="#94a3b8">Treine cold calls contra um prospect de IA.</text>
-  <text x="58" y="150" font-size="18" fill="#94a3b8">Receba um <tspan fill="#818cf8" font-weight="700">scorecard de verdade</tspan>.</text>
+  <text x="58" y="124" font-size="18" fill="#94a3b8">Practise cold calls against an AI prospect.</text>
+  <text x="58" y="150" font-size="18" fill="#94a3b8">Get a <tspan fill="#818cf8" font-weight="700">real scorecard</tspan>.</text>
 
   <!-- Chips -->
   <g font-size="13" font-weight="600">
     <g transform="translate(58,182)">
-      <rect width="132" height="30" rx="15" fill="#312e81" opacity="0.5"/>
-      <text x="16" y="20" fill="#c7d2fe">🎯 Coach com IA</text>
+      <rect width="118" height="30" rx="15" fill="#312e81" opacity="0.5"/>
+      <text x="16" y="20" fill="#c7d2fe">🎯 AI coach</text>
     </g>
-    <g transform="translate(200,182)">
-      <rect width="150" height="30" rx="15" fill="#1f2937"/>
-      <text x="16" y="20" fill="#cbd5e1">🏆 Gamificação</text>
+    <g transform="translate(186,182)">
+      <rect width="124" height="30" rx="15" fill="#1f2937"/>
+      <text x="16" y="20" fill="#cbd5e1">🏆 Gamified</text>
     </g>
-    <g transform="translate(360,182)">
-      <rect width="118" height="30" rx="15" fill="#1f2937"/>
+    <g transform="translate(320,182)">
+      <rect width="122" height="30" rx="15" fill="#1f2937"/>
       <text x="16" y="20" fill="#cbd5e1">🗣 PT · IT · EN</text>
     </g>
   </g>
 
   <!-- Animated waveform -->
-  <g transform="translate(58,250)" fill="url(#acc)">
+  <g transform="translate(58,252)" fill="url(#acc)">
     <rect x="0"   y="-8"  width="8" height="16" rx="4"><animate attributeName="height" values="16;40;16" dur="1s" begin="0s"   repeatCount="indefinite"/><animate attributeName="y" values="-8;-20;-8" dur="1s" begin="0s"   repeatCount="indefinite"/></rect>
     <rect x="16"  y="-14" width="8" height="28" rx="4"><animate attributeName="height" values="28;54;28" dur="1s" begin="0.1s" repeatCount="indefinite"/><animate attributeName="y" values="-14;-27;-14" dur="1s" begin="0.1s" repeatCount="indefinite"/></rect>
     <rect x="32"  y="-20" width="8" height="40" rx="4"><animate attributeName="height" values="40;18;40" dur="1s" begin="0.2s" repeatCount="indefinite"/><animate attributeName="y" values="-20;-9;-20" dur="1s" begin="0.2s" repeatCount="indefinite"/></rect>
@@ -46,37 +46,38 @@
   </g>
 
   <!-- Scorecard card with animated score ring + XP bar -->
-  <g transform="translate(680,54)">
-    <rect width="264" height="192" rx="16" fill="#171a23" stroke="#1f2330"/>
-    <text x="24" y="40" font-size="13" font-weight="700" fill="#64748b" letter-spacing="1">SCORECARD</text>
+  <g transform="translate(680,50)">
+    <rect width="264" height="200" rx="16" fill="#171a23" stroke="#1f2330"/>
+    <text x="24" y="38" font-size="13" font-weight="700" fill="#64748b" letter-spacing="1">SCORECARD</text>
 
     <!-- Score ring -->
-    <g transform="translate(74,116)">
-      <circle r="46" fill="none" stroke="#1f2937" stroke-width="10"/>
-      <circle r="46" fill="none" stroke="url(#acc)" stroke-width="10" stroke-linecap="round"
-              transform="rotate(-90)" stroke-dasharray="289"
-              stroke-dashoffset="289">
-        <animate attributeName="stroke-dashoffset" from="289" to="64" dur="1.6s" begin="0.3s" fill="freeze" calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0;1" values="289;64"/>
+    <g transform="translate(72,112)">
+      <circle r="42" fill="none" stroke="#1f2937" stroke-width="10"/>
+      <circle r="42" fill="none" stroke="url(#acc)" stroke-width="10" stroke-linecap="round"
+              transform="rotate(-90)" stroke-dasharray="264" stroke-dashoffset="264">
+        <animate attributeName="stroke-dashoffset" dur="1.6s" begin="0.3s" fill="freeze"
+                 calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0;1" values="264;58"/>
       </circle>
-      <text x="0" y="8" font-size="34" font-weight="800" text-anchor="middle" fill="#f1f5f9" opacity="0">
+      <text x="0" y="9" font-size="32" font-weight="800" text-anchor="middle" fill="#f1f5f9" opacity="0">
         78<animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.2s" fill="freeze"/>
       </text>
     </g>
 
     <!-- Focus line -->
-    <g transform="translate(140,86)" opacity="0">
+    <g transform="translate(134,86)" opacity="0">
       <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.4s" fill="freeze"/>
-      <text font-size="12" font-weight="700" fill="#818cf8">🎯 FOCO</text>
-      <text y="22" font-size="12" fill="#cbd5e1">Peça o próximo</text>
-      <text y="40" font-size="12" fill="#cbd5e1">passo concreto.</text>
+      <text font-size="12" font-weight="700" fill="#818cf8">🎯 FOCUS</text>
+      <text y="22" font-size="12" fill="#cbd5e1">Ask for a concrete</text>
+      <text y="40" font-size="12" fill="#cbd5e1">next step.</text>
     </g>
 
     <!-- XP bar -->
-    <g transform="translate(24,160)">
+    <g transform="translate(24,170)">
       <text font-size="11" font-weight="700" fill="#64748b">⚡ +78 XP</text>
-      <rect x="0" y="10" width="216" height="8" rx="4" fill="#1f2937"/>
-      <rect x="0" y="10" width="0" height="8" rx="4" fill="url(#acc)">
-        <animate attributeName="width" from="0" to="176" dur="1.4s" begin="0.6s" fill="freeze" calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0;1" values="0;176"/>
+      <rect x="0" y="12" width="216" height="8" rx="4" fill="#1f2937"/>
+      <rect x="0" y="12" width="0" height="8" rx="4" fill="url(#acc)">
+        <animate attributeName="width" dur="1.4s" begin="0.6s" fill="freeze"
+                 calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0;1" values="0;176"/>
       </rect>
     </g>
   </g>
