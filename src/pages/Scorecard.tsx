@@ -85,9 +85,7 @@ export function Scorecard() {
   const xpEarned = xpOfCall({
     score: evaluation.overall_score,
     meetingBooked: session.outcome === 'meeting_booked',
-    language: scenario?.language ?? 'pt-BR',
     difficulty: scenario?.difficulty ?? 1,
-    objectionAllHandled: false,
   });
 
   return (

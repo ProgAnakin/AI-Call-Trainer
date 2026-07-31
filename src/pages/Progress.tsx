@@ -8,7 +8,7 @@ import { LevelCard } from '@/components/dashboard/LevelCard';
 import { Achievements } from '@/components/dashboard/Achievements';
 import { SkillMatrix } from '@/components/dashboard/SkillMatrix';
 import { Card } from '@/components/ui';
-import { FRAMEWORKS } from '@/data/frameworks';
+import { criterionLabel } from '@/data/frameworks';
 import { useT } from '@/i18n';
 
 export function Progress() {
@@ -16,13 +16,7 @@ export function Progress() {
   const data = useProgress();
   const gam = useGamification();
 
-  const criterionLabel = (key: string): string => {
-    for (const fw of Object.values(FRAMEWORKS)) {
-      const c = fw.criteria.find((c) => c.key === key);
-      if (c) return c.labels[lang];
-    }
-    return key;
-  };
+  const label = (key: string) => criterionLabel(key, lang);
 
   // Empty state ainda oferece o import — é justamente quando se restaura backup.
   if (data.totalSessions === 0) {
@@ -79,7 +73,7 @@ export function Progress() {
                 ↯ {t('progress.weakest')}
               </p>
               <p className="mt-1 text-lg font-semibold text-slate-100">
-                {criterionLabel(data.weakestCriterion.key)}{' '}
+                {label(data.weakestCriterion.key)}{' '}
                 <span className="font-mono text-sm text-amber-400">
                   {data.weakestCriterion.avg}/10
                 </span>
@@ -100,7 +94,7 @@ export function Progress() {
 
       {data.byCriterion.length > 0 && (
         <div className="mb-6">
-          <SkillMatrix items={data.byCriterion} label={criterionLabel} />
+          <SkillMatrix items={data.byCriterion} label={label} />
         </div>
       )}
 

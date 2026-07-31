@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useProgress } from '@/hooks/useProgress';
 import { actionView, nextBestAction } from '@/lib/coach';
-import { FRAMEWORKS } from '@/data/frameworks';
+import { criterionLabel } from '@/data/frameworks';
 import { Button } from '@/components/ui';
 import { useT, type TKey } from '@/i18n';
 
@@ -21,16 +21,10 @@ export function NextBestAction() {
     outcomeCount: data.outcomeCount,
   });
   const view = actionView(action);
-
-  const criterionLabel = (key: string): string => {
-    for (const fw of Object.values(FRAMEWORKS)) {
-      const c = fw.criteria.find((c) => c.key === key);
-      if (c) return c.labels[lang];
-    }
-    return key;
-  };
   const vars =
-    action.kind === 'focus_criterion' ? { skill: criterionLabel(action.criterionKey) } : undefined;
+    action.kind === 'focus_criterion'
+      ? { skill: criterionLabel(action.criterionKey, lang) }
+      : undefined;
 
   return (
     <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-accent/40 bg-accent/10 p-5 sm:flex-row sm:items-center sm:justify-between">
