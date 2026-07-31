@@ -1,6 +1,22 @@
-# 🎙️ AI Call Trainer
+<p align="center">
+  <img src="docs/hero.svg" alt="AI Call Trainer" width="860">
+</p>
 
-**Practise sales calls against an AI prospect and get a real scorecard — free, multilingual, and running entirely in your browser.**
+<h1 align="center">🎙️ AI Call Trainer</h1>
+
+<p align="center">
+  <b>Practise sales calls against an AI prospect and get a real scorecard —<br/>
+  free, multilingual, and running entirely in your browser.</b>
+</p>
+
+<p align="center">
+  🇧🇷 pt-BR&nbsp; · &nbsp;🇵🇹 pt-PT&nbsp; · &nbsp;🇮🇹 it-IT&nbsp; · &nbsp;🇺🇸 en-US
+  &nbsp;&nbsp;•&nbsp;&nbsp; MIT &nbsp;&nbsp;•&nbsp;&nbsp; installable PWA &nbsp;&nbsp;•&nbsp;&nbsp; zero-config demo
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/home.png" alt="Scenario picker with the adaptive next-step coach" width="880">
+</p>
 
 You pick a scenario, dial in, and hold a cold call or discovery call with a prospect
 played by Claude. The prospect has their own pains, hidden objections, personality and
@@ -68,6 +84,8 @@ The prospect never knows it's being graded, which is what keeps the roleplay hon
 
 ### The call
 
+<p align="center"><img src="docs/screenshots/briefing.png" alt="Pre-call briefing with the battle card open" width="720"></p>
+
 - **Scenario cards** — persona × product × call type × difficulty × language.
 - **Pre-call briefing** — who picks up, their personality bars, their **mood**, what you're
   selling, your objective, and the time limit.
@@ -82,6 +100,8 @@ The prospect never knows it's being graded, which is what keeps the roleplay hon
 
 ### The scorecard
 
+<p align="center"><img src="docs/screenshots/scorecard.png" alt="Scorecard with score, single focus, objection map and best/worst line" width="720"></p>
+
 - **Overall score** with an animated reveal, weighted by the framework's criteria.
 - **One focus for next time** — the single highest-impact change, surfaced first so you
   aren't drowned in feedback.
@@ -94,6 +114,8 @@ The prospect never knows it's being graded, which is what keeps the roleplay hon
 - **Full transcript**, collapsible.
 
 ### Objection Gauntlet (`/drill`)
+
+<p align="center"><img src="docs/screenshots/drill.png" alt="Objection gauntlet with pressure-mode countdown" width="640"></p>
 
 Rapid-fire objection practice — the drill an SDR actually repeats daily. Real objections
 from the product library come at you one at a time; you answer, get an **instant score**
@@ -108,6 +130,8 @@ Runs entirely client-side: **zero API cost and no latency**, which is what makes
 viable.
 
 ### Progress dashboard (`/progress`)
+
+<p align="center"><img src="docs/screenshots/progress.png" alt="Progress dashboard: level ring, achievements and skill matrix" width="720"></p>
 
 - **Level & XP** — an 8-tier SDR career ladder (Trainee → Rainmaker) with XP earned per
   call (score + bonuses for booking a meeting and for hard scenarios).
