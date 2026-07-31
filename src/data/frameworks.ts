@@ -17,7 +17,7 @@ export interface FrameworkDef {
 export const FRAMEWORKS: Record<FrameworkId, FrameworkDef> = {
   basic: {
     id: 'basic',
-    name: 'Fundamentos',
+    name: 'Fundamentals',
     criteria: [
       {
         key: 'abertura',

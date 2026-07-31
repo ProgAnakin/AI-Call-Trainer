@@ -1,6 +1,6 @@
 import type { Scenario } from '@/types';
 
-/** Time limits por tipo de call (§10 da spec). */
+/** Time limits per call type (spec §10). */
 export const TIME_LIMITS: Record<Scenario['call_type'], number> = {
   cold_call: 300,
   discovery: 600,
@@ -11,13 +11,13 @@ export const TIME_LIMITS: Record<Scenario['call_type'], number> = {
 export const SEED_SCENARIOS: Scenario[] = [
   {
     id: '00000000-0000-4000-8000-000000000301',
-    persona_id: '00000000-0000-4000-8000-000000000202', // Paulo, Head de Vendas
+    persona_id: '00000000-0000-4000-8000-000000000202', // Paulo, Head of Sales
     product_id: '00000000-0000-4000-8000-000000000101', // Sales Cloud
     call_type: 'cold_call',
     difficulty: 2,
     language: 'pt-BR',
     time_limit_seconds: TIME_LIMITS.cold_call,
-    success_criteria: 'Agendar uma discovery call de 30 minutos com data e hora concretas.',
+    success_criteria: 'Book a 30-minute discovery call with a concrete date and time.',
   },
   {
     id: '00000000-0000-4000-8000-000000000302',
@@ -28,7 +28,7 @@ export const SEED_SCENARIOS: Scenario[] = [
     language: 'pt-BR',
     time_limit_seconds: TIME_LIMITS.cold_call,
     success_criteria:
-      'Sobreviver ao ceticismo, conectar a dor de forecast ao produto e agendar 20 minutos com a CFO ou indicação dela.',
+      'Survive the skepticism, connect the forecasting pain to the product, and book 20 minutes with the CFO or her referral.',
   },
   {
     id: '00000000-0000-4000-8000-000000000303',
@@ -39,7 +39,7 @@ export const SEED_SCENARIOS: Scenario[] = [
     language: 'pt-BR',
     time_limit_seconds: TIME_LIMITS.discovery,
     success_criteria:
-      'Mapear as 3 dores do processo comercial, quantificar impacto de pelo menos uma e sair com próximo passo agendado.',
+      'Map the 3 sales-process pains, quantify the impact of at least one, and leave with a next step booked.',
   },
   {
     id: '00000000-0000-4000-8000-000000000304',
@@ -50,18 +50,18 @@ export const SEED_SCENARIOS: Scenario[] = [
     language: 'it-IT',
     time_limit_seconds: TIME_LIMITS.discovery,
     success_criteria:
-      'Scoprire i dolori del customer service, capire chi decide (COO) e ottenere un incontro con Giulia + COO.',
+      'Uncover the customer-service pains, learn who decides (the COO), and secure a meeting with Giulia + COO.',
   },
   {
     id: '00000000-0000-4000-8000-000000000305',
-    persona_id: '00000000-0000-4000-8000-000000000206', // Sr. Bianchi
+    persona_id: '00000000-0000-4000-8000-000000000206', // Mr. Bianchi, Owner
     product_id: '00000000-0000-4000-8000-000000000101', // Sales Cloud
     call_type: 'cold_call',
     difficulty: 5,
     language: 'it-IT',
     time_limit_seconds: TIME_LIMITS.cold_call,
     success_criteria:
-      'Non farsi riattaccare in faccia, guadagnare fiducia e ottenere il permesso di richiamare o visitare l’azienda.',
+      'Avoid getting hung up on, earn trust, and get permission to call back or visit the company.',
   },
   {
     id: '00000000-0000-4000-8000-000000000306',
@@ -72,7 +72,7 @@ export const SEED_SCENARIOS: Scenario[] = [
     language: 'pt-PT',
     time_limit_seconds: TIME_LIMITS.cold_call,
     success_criteria:
-      'Prender a atenção nos primeiros 30 segundos, escapar do “manda um e-mail” e agendar 15 minutos.',
+      'Grab attention in the first 30 seconds, escape the "send me an email" brush-off, and book 15 minutes.',
   },
   {
     id: '00000000-0000-4000-8000-000000000307',
@@ -94,6 +94,6 @@ export const SEED_SCENARIOS: Scenario[] = [
     language: 'it-IT',
     time_limit_seconds: TIME_LIMITS.demo,
     success_criteria:
-      'Dimostrare il valore per i ticket ripetitivi, gestire l’obiezione del budget e definire i prossimi passi con il COO.',
+      'Demonstrate the value for repetitive tickets, handle the budget objection, and define next steps with the COO.',
   },
 ];

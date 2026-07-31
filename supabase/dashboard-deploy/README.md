@@ -1,76 +1,76 @@
-# Deploy das Edge Functions pelo painel do Supabase (sem terminal)
+# Deploy the Edge Functions from the Supabase dashboard (no terminal)
 
-Guia para ligar o Claude usando só o navegador. Os dois arquivos desta pasta
-(`roleplay.ts` e `evaluate.ts`) são versões "tudo num arquivo só" das funções —
-prontas para copiar e colar. (As versões em `supabase/functions/` são as
-mesmas, organizadas para deploy por linha de comando.)
+A guide to turning on Claude using only your browser. The two files in this
+folder (`roleplay.ts` and `evaluate.ts`) are "everything in one file" versions
+of the functions — ready to copy and paste. (The versions in
+`supabase/functions/` are the same, organized for command-line deploy.)
 
-> Pré-requisito: você já criou o projeto no Supabase e já rodou a migration
-> `supabase/migrations/0001_init.sql` no SQL Editor. ✔
+> Prerequisite: you already created the project on Supabase and already ran the
+> `supabase/migrations/0001_init.sql` migration in the SQL Editor. ✔
 
 ---
 
-## Passo 1 — Guardar a API key da Anthropic como secret
+## Step 1 — Store the Anthropic API key as a secret
 
-1. No painel do Supabase, menu lateral → **Edge Functions**.
-2. Aba **Secrets** (ou **Project Settings → Edge Functions → Secrets**).
+1. In the Supabase dashboard, sidebar → **Edge Functions**.
+2. **Secrets** tab (or **Project Settings → Edge Functions → Secrets**).
 3. **Add new secret**:
    - Name: `ANTHROPIC_API_KEY`
-   - Value: sua chave `sk-ant-...` (pegue em console.anthropic.com)
-4. Salvar.
+   - Value: your `sk-ant-...` key (get it at console.anthropic.com)
+4. Save.
 
-As secrets `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já existem
-automaticamente — não precisa criar.
+The `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` secrets already exist
+automatically — no need to create them.
 
-> Opcionais (só se quiser mudar os defaults): `ANTHROPIC_MODEL`,
+> Optional (only if you want to change the defaults): `ANTHROPIC_MODEL`,
 > `ANTHROPIC_EVAL_MODEL`, `MAX_CALLS_PER_DAY`, `MAX_EVALS_PER_DAY`,
-> `MAX_TURNS_PER_CALL`. Veja a tabela no README principal.
+> `MAX_TURNS_PER_CALL`. See the table in the main README.
 
 ---
 
-## Passo 2 — Criar a função `roleplay`
+## Step 2 — Create the `roleplay` function
 
-1. **Edge Functions → Deploy a new function → Via Editor** (ou "Create function").
-2. Nome da função: exatamente **`roleplay`** (tudo minúsculo).
-3. Apague o código de exemplo que vier no editor.
-4. Abra o arquivo [`roleplay.ts`](./roleplay.ts) aqui do repositório, clique em
-   **Raw** (ou no botão de copiar), e cole **todo** o conteúdo no editor.
-5. Clique em **Deploy**.
+1. **Edge Functions → Deploy a new function → Via Editor** (or "Create function").
+2. Function name: exactly **`roleplay`** (all lowercase).
+3. Delete the sample code that comes in the editor.
+4. Open [`roleplay.ts`](./roleplay.ts) from this repo, click **Raw** (or the copy
+   button), and paste **all** of the content into the editor.
+5. Click **Deploy**.
 
 ---
 
-## Passo 3 — Criar a função `evaluate`
+## Step 3 — Create the `evaluate` function
 
-Repita o Passo 2, mas:
-- Nome da função: exatamente **`evaluate`**.
-- Cole o conteúdo de [`evaluate.ts`](./evaluate.ts).
+Repeat Step 2, but:
+- Function name: exactly **`evaluate`**.
+- Paste the content of [`evaluate.ts`](./evaluate.ts).
 - **Deploy**.
 
 ---
 
-## Passo 4 — Ligar o site à sua conta Supabase
+## Step 4 — Connect the site to your Supabase account
 
-No arquivo `.env` do projeto (copie de `.env.example`), preencha:
+In the project's `.env` file (copy from `.env.example`), fill in:
 
 ```
-VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-anon-key
+VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Ambos estão em **Project Settings → API**:
+Both are under **Project Settings → API**:
 - `VITE_SUPABASE_URL` = "Project URL"
-- `VITE_SUPABASE_ANON_KEY` = a chave "anon" / "public"
+- `VITE_SUPABASE_ANON_KEY` = the "anon" / "public" key
 
-(Se você for publicar na Vercel, coloque essas mesmas duas variáveis lá também,
-em Settings → Environment Variables.)
+(If you deploy to Vercel, add these same two variables there too, under
+Settings → Environment Variables.)
 
 ---
 
-## Como saber se deu certo
+## How to know it worked
 
-- Faça uma call. Se o **badge "Modo demo"** sumiu do topo do site, o `.env`
-  foi lido e o app está falando com o Supabase. ✅
-- Se o prospect responde com falas variadas e naturais (não roteirizadas), o
-  Claude está no ar. 🎉
-- Deu erro? Em **Edge Functions → roleplay → Logs** você vê a mensagem exata
-  (ex.: `ANTHROPIC_API_KEY secret not set` = revise o Passo 1).
+- Make a call. If the **"Demo mode" badge** disappeared from the top of the
+  site, the `.env` was read and the app is talking to Supabase. ✅
+- If the prospect replies with varied, natural lines (not scripted), Claude is
+  live. 🎉
+- Got an error? Under **Edge Functions → roleplay → Logs** you can see the exact
+  message (e.g. `ANTHROPIC_API_KEY secret not set` = revisit Step 1).

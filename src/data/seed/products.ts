@@ -1,8 +1,8 @@
 import type { Product } from '@/types';
 
 /**
- * IDs fixos (mesmos UUIDs do seed SQL em supabase/migrations) para que o modo
- * local e o modo Supabase compartilhem as mesmas referências.
+ * Fixed IDs (same UUIDs as the SQL seed in supabase/migrations) so the local
+ * mode and the Supabase mode share the same references.
  */
 export const SEED_PRODUCTS: Product[] = [
   {
@@ -10,73 +10,73 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Sales Cloud',
     vendor: 'Salesforce',
     one_liner:
-      'CRM nº 1 do mercado: pipeline, previsão de vendas e automação num só lugar, com IA embutida.',
+      'The #1 CRM on the market: pipeline, sales forecasting and automation in one place, with built-in AI.',
     key_features: [
       {
-        feature: 'Gestão de pipeline unificada',
-        benefit: 'Todos os deals visíveis num só funil — nada se perde em planilhas.',
+        feature: 'Unified pipeline management',
+        benefit: 'Every deal visible in one funnel — nothing gets lost in spreadsheets.',
       },
       {
-        feature: 'Forecasting com IA (Einstein)',
-        benefit: 'Previsão de fechamento baseada em dados reais, não em achismo do gestor.',
+        feature: 'AI forecasting (Einstein)',
+        benefit: 'Close predictions based on real data, not the manager’s gut feeling.',
       },
       {
-        feature: 'Automação de tarefas e cadências',
-        benefit: 'Rep gasta tempo vendendo, não atualizando campos e mandando follow-up manual.',
+        feature: 'Task and cadence automation',
+        benefit: 'Reps spend time selling, not updating fields and sending manual follow-ups.',
       },
       {
-        feature: 'Relatórios e dashboards em tempo real',
-        benefit: 'Gestor enxerga gargalo do funil na hora, sem esperar fechamento do mês.',
+        feature: 'Real-time reports and dashboards',
+        benefit: 'Managers see the funnel bottleneck instantly, without waiting for month-end.',
       },
       {
-        feature: 'AppExchange (5.000+ integrações)',
-        benefit: 'Conecta com o stack que a empresa já usa, do ERP ao WhatsApp.',
+        feature: 'AppExchange (5,000+ integrations)',
+        benefit: 'Connects to the stack the company already uses, from the ERP to WhatsApp.',
       },
     ],
     pricing_notes:
-      'Por usuário/mês: Starter ~€25, Pro ~€100, Enterprise ~€165. Contrato anual. Implementação é custo à parte.',
+      'Per user/month: Starter ~€25, Pro ~€100, Enterprise ~€165. Annual contract. Implementation is a separate cost.',
     common_objections: [
       {
-        objection: 'É caro demais para o nosso tamanho.',
+        objection: 'It is too expensive for our size.',
         model_answer:
-          'Comparado a quê? Um deal perdido por follow-up esquecido custa quanto? O Starter custa menos que um almoço por dia por rep.',
+          'Compared to what? How much does one deal lost to a forgotten follow-up cost? Starter is less than a daily lunch per rep.',
       },
       {
-        objection: 'Já usamos planilhas e funciona.',
+        objection: 'We use spreadsheets and it works.',
         model_answer:
-          'Funciona até o dia em que o vendedor sai e leva o histórico junto. Quantos deals estão hoje na cabeça de uma pessoa só?',
+          'It works until the day a rep leaves and takes the history with them. How many deals live in a single person’s head today?',
       },
       {
-        objection: 'Implementação é longa e complexa.',
+        objection: 'Implementation is long and complex.',
         model_answer:
-          'O Starter roda em dias, não meses. A complexidade vem quando a operação cresce — e aí é sinal de que valeu.',
+          'Starter runs in days, not months. The complexity comes as the operation grows — and that is a sign it paid off.',
       },
       {
-        objection: 'Meu time não vai adotar mais uma ferramenta.',
+        objection: 'My team will not adopt yet another tool.',
         model_answer:
-          'Adoção é problema de processo, não de ferramenta. Por isso o rollout começa com o fluxo que o time já faz — só que automático.',
+          'Adoption is a process problem, not a tool problem. That is why the rollout starts with the flow the team already does — just automated.',
       },
       {
-        objection: 'Já temos HubSpot / outro CRM.',
+        objection: 'We already have HubSpot / another CRM.',
         model_answer:
-          'Ótimo — o que está faltando nele hoje? Normalmente ouvimos previsão de vendas e customização. É exatamente onde o Sales Cloud é mais forte.',
+          'Great — what is missing in it today? We usually hear forecasting and customization. That is exactly where Sales Cloud is strongest.',
       },
     ],
     competitors: [
       {
         name: 'HubSpot',
         key_difference:
-          'HubSpot é mais simples e barato no início; Sales Cloud escala melhor em customização, forecasting e ecossistema enterprise.',
+          'HubSpot is simpler and cheaper to start; Sales Cloud scales better on customization, forecasting and the enterprise ecosystem.',
       },
       {
         name: 'Microsoft Dynamics 365',
         key_difference:
-          'Dynamics agrada quem já vive no ecossistema Microsoft; Salesforce tem UX mais madura para vendas e o maior marketplace de apps.',
+          'Dynamics appeals to those already living in the Microsoft ecosystem; Salesforce has a more mature sales UX and the largest app marketplace.',
       },
       {
         name: 'Pipedrive',
         key_difference:
-          'Pipedrive é ótimo para times pequenos focados em pipeline; não acompanha em automação avançada, IA e governança.',
+          'Pipedrive is great for small pipeline-focused teams; it does not keep up on advanced automation, AI and governance.',
       },
     ],
   },
@@ -85,73 +85,73 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Agentforce',
     vendor: 'Salesforce',
     one_liner:
-      'Agentes de IA autônomos que atendem, qualificam e resolvem — integrados aos dados do seu CRM, 24/7.',
+      'Autonomous AI agents that serve, qualify and resolve — plugged into your CRM data, 24/7.',
     key_features: [
       {
-        feature: 'Agentes autônomos com guardrails',
-        benefit: 'Resolve casos de ponta a ponta sem humano, mas dentro de limites que você define.',
+        feature: 'Autonomous agents with guardrails',
+        benefit: 'Resolves cases end to end without a human, but within limits you define.',
       },
       {
-        feature: 'Treinado nos dados do seu Salesforce',
-        benefit: 'Respostas com contexto real do cliente, não genéricas de chatbot.',
+        feature: 'Trained on your Salesforce data',
+        benefit: 'Answers with real customer context, not generic chatbot replies.',
       },
       {
-        feature: 'Handoff inteligente para humanos',
-        benefit: 'Quando o caso é complexo, passa para o time com todo o histórico resumido.',
+        feature: 'Smart handoff to humans',
+        benefit: 'When a case is complex, it hands over to the team with the full history summarized.',
       },
       {
         feature: 'Low-code builder (Agent Builder)',
-        benefit: 'Ops cria e ajusta agentes sem depender de engenharia.',
+        benefit: 'Ops creates and tunes agents without depending on engineering.',
       },
       {
-        feature: 'Atende em múltiplos canais e idiomas',
-        benefit: 'Um agente cobre site, WhatsApp e e-mail em PT/EN/IT sem triplicar o time.',
+        feature: 'Serves across channels and languages',
+        benefit: 'One agent covers web, WhatsApp and email in PT/EN/IT without tripling the team.',
       },
     ],
     pricing_notes:
-      'Modelo por conversa (~$2/conversa no lançamento) ou pacotes de crédito. Requer Salesforce como base de dados.',
+      'Per-conversation model (~$2/conversation at launch) or credit packs. Requires Salesforce as the data foundation.',
     common_objections: [
       {
-        objection: 'IA vai falar besteira para o meu cliente.',
+        objection: 'The AI will say something dumb to my customer.',
         model_answer:
-          'Por isso existem guardrails e escopo fechado: o agente só age sobre tópicos e ações que você aprovou, com auditoria completa.',
+          'That is why guardrails and a closed scope exist: the agent only acts on topics and actions you approved, with full audit logs.',
       },
       {
-        objection: 'Já testamos chatbot e foi péssimo.',
+        objection: 'We tried a chatbot and it was terrible.',
         model_answer:
-          'Chatbot de árvore de decisão ≠ agente com contexto do CRM. A diferença é resolver o caso, não redirecionar para FAQ.',
+          'A decision-tree chatbot ≠ an agent with CRM context. The difference is resolving the case, not redirecting to an FAQ.',
       },
       {
-        objection: 'Pagar por conversa fica caro em escala.',
+        objection: 'Paying per conversation gets expensive at scale.',
         model_answer:
-          'Compare com o custo por atendimento humano (€3-8). O agente resolve os repetitivos e o time foca nos casos de valor.',
+          'Compare it to the cost per human interaction (€3–8). The agent handles the repetitive ones and the team focuses on high-value cases.',
       },
       {
-        objection: 'Meu time vai achar que será substituído.',
+        objection: 'My team will think they are being replaced.',
         model_answer:
-          'Os primeiros casos são os que ninguém quer: madrugada, fim de semana, perguntas repetidas. O time sobe de nível, não sai.',
+          'The first cases are the ones nobody wants: overnight, weekends, repeated questions. The team levels up, it does not leave.',
       },
       {
-        objection: 'Não temos dados organizados para isso.',
+        objection: 'We do not have organized data for this.',
         model_answer:
-          'É o caso mais comum. O rollout começa com um escopo pequeno e bem documentado — e expõe exatamente onde os dados precisam melhorar.',
+          'That is the most common case. The rollout starts with a small, well-documented scope — and it exposes exactly where the data needs to improve.',
       },
     ],
     competitors: [
       {
         name: 'Microsoft Copilot Studio',
         key_difference:
-          'Forte no ecossistema Office; Agentforce ganha quando o dado do cliente já vive no Salesforce.',
+          'Strong in the Office ecosystem; Agentforce wins when the customer data already lives in Salesforce.',
       },
       {
         name: 'Intercom Fin',
         key_difference:
-          'Fin é excelente para suporte SaaS; Agentforce cobre vendas + serviço + marketing sobre o mesmo CRM.',
+          'Fin is excellent for SaaS support; Agentforce covers sales + service + marketing over the same CRM.',
       },
       {
-        name: 'Chatbots custom (OpenAI/Claude direto)',
+        name: 'Custom chatbots (OpenAI/Claude directly)',
         key_difference:
-          'Build próprio dá flexibilidade, mas você mantém infra, segurança e integração. Agentforce vem com isso pronto e auditável.',
+          'A custom build gives flexibility, but you own the infra, security and integration. Agentforce ships that ready and auditable.',
       },
     ],
   },
@@ -160,73 +160,73 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Service Cloud',
     vendor: 'Salesforce',
     one_liner:
-      'Plataforma de atendimento omnichannel: todos os canais, o histórico completo do cliente e IA num só console.',
+      'Omnichannel customer service platform: every channel, the full customer history and AI in one console.',
     key_features: [
       {
-        feature: 'Console unificado omnichannel',
-        benefit: 'Agente vê e-mail, chat, telefone e WhatsApp do cliente numa tela só.',
+        feature: 'Unified omnichannel console',
+        benefit: 'Agents see the customer’s email, chat, phone and WhatsApp on a single screen.',
       },
       {
-        feature: 'Roteamento inteligente de casos',
-        benefit: 'Caso certo para o agente certo — SLA para de estourar por distribuição manual.',
+        feature: 'Smart case routing',
+        benefit: 'The right case to the right agent — SLAs stop blowing up from manual distribution.',
       },
       {
-        feature: 'Base de conhecimento integrada',
-        benefit: 'Respostas consistentes e self-service que reduz volume de tickets.',
+        feature: 'Integrated knowledge base',
+        benefit: 'Consistent answers and self-service that cuts ticket volume.',
       },
       {
-        feature: 'Einstein para atendimento',
-        benefit: 'Resumo automático de caso, sugestão de resposta e classificação sem digitação.',
+        feature: 'Einstein for service',
+        benefit: 'Automatic case summaries, reply suggestions and classification without typing.',
       },
       {
-        feature: 'Relatórios de CSAT/SLA em tempo real',
-        benefit: 'Gestor enxerga fila, tempo de resposta e satisfação sem montar planilha.',
+        feature: 'Real-time CSAT/SLA reports',
+        benefit: 'Managers see the queue, response time and satisfaction without building a spreadsheet.',
       },
     ],
     pricing_notes:
-      'Por usuário/mês: Starter ~€25 até Enterprise ~€165. Add-ons de canal (voz, WhatsApp) cobrados à parte.',
+      'Per user/month: Starter ~€25 up to Enterprise ~€165. Channel add-ons (voice, WhatsApp) billed separately.',
     common_objections: [
       {
-        objection: 'Zendesk faz o mesmo e é mais barato.',
+        objection: 'Zendesk does the same and is cheaper.',
         model_answer:
-          'Para ticket simples, sim. A diferença aparece quando atendimento precisa do contexto de vendas: no Service Cloud o histórico é o mesmo CRM.',
+          'For simple tickets, yes. The difference shows when support needs the sales context: in Service Cloud the history is the same CRM.',
       },
       {
-        objection: 'Nosso volume não justifica.',
+        objection: 'Our volume does not justify it.',
         model_answer:
-          'Qual o custo de um cliente que cancela por atendimento ruim? O ROI raramente vem do volume, vem da retenção.',
+          'What does a customer who churns over bad support cost? The ROI rarely comes from volume, it comes from retention.',
       },
       {
-        objection: 'Migrar os tickets antigos é inviável.',
+        objection: 'Migrating the old tickets is unfeasible.',
         model_answer:
-          'Migração é faseada: canais novos entram primeiro, o legado fica em leitura. Ninguém perde histórico.',
+          'Migration is phased: new channels go first, the legacy stays read-only. Nobody loses history.',
       },
       {
-        objection: 'Meu time mal usa o sistema atual.',
+        objection: 'My team barely uses the current system.',
         model_answer:
-          'Sinal clássico de ferramenta que atrapalha em vez de ajudar. Adoção melhora quando o sistema tira trabalho em vez de criar.',
+          'A classic sign of a tool that gets in the way instead of helping. Adoption improves when the system removes work instead of creating it.',
       },
       {
-        objection: 'IA no atendimento vai irritar o cliente.',
+        objection: 'AI in support will annoy the customer.',
         model_answer:
-          'IA mal implementada, sim. Aqui ela resume, sugere e roteia — o cliente continua falando com gente, só que gente mais rápida.',
+          'Badly implemented AI, yes. Here it summarizes, suggests and routes — the customer still talks to a person, just a faster one.',
       },
     ],
     competitors: [
       {
         name: 'Zendesk',
         key_difference:
-          'Zendesk é mais rápido de implantar; Service Cloud ganha em visão 360º do cliente e integração com vendas.',
+          'Zendesk is faster to deploy; Service Cloud wins on a 360º view of the customer and integration with sales.',
       },
       {
         name: 'Freshdesk',
         key_difference:
-          'Freshdesk compete por preço; Service Cloud entrega governança e escala enterprise.',
+          'Freshdesk competes on price; Service Cloud delivers governance and enterprise scale.',
       },
       {
         name: 'Intercom',
         key_difference:
-          'Intercom brilha em chat/produto SaaS; Service Cloud cobre operações de serviço completas incluindo voz e field service.',
+          'Intercom shines in chat/SaaS product; Service Cloud covers full service operations including voice and field service.',
       },
     ],
   },
@@ -235,73 +235,73 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Slack',
     vendor: 'Salesforce',
     one_liner:
-      'O QG digital da empresa: comunicação por canais, integrações com todo o stack e automação sem código.',
+      'The company’s digital HQ: channel-based communication, integrations with the whole stack, and no-code automation.',
     key_features: [
       {
-        feature: 'Canais organizados por projeto/tema',
-        benefit: 'Fim do e-mail interno: contexto fica público, pesquisável e entra quem precisa.',
+        feature: 'Channels organized by project/topic',
+        benefit: 'The end of internal email: context stays public, searchable, and the right people join.',
       },
       {
-        feature: 'Huddles (áudio/vídeo instantâneo)',
-        benefit: 'Resolve em 5 minutos o que viraria uma reunião de 30 na agenda.',
+        feature: 'Huddles (instant audio/video)',
+        benefit: 'Solves in 5 minutes what would become a 30-minute meeting on the calendar.',
       },
       {
-        feature: 'Workflow Builder sem código',
-        benefit: 'Onboarding, aprovações e avisos automatizados sem depender de TI.',
+        feature: 'No-code Workflow Builder',
+        benefit: 'Onboarding, approvals and alerts automated without depending on IT.',
       },
       {
-        feature: '2.600+ integrações (Google, Jira, Salesforce...)',
-        benefit: 'Notificações e ações dos outros sistemas acontecem onde o time já está.',
+        feature: '2,600+ integrations (Google, Jira, Salesforce...)',
+        benefit: 'Notifications and actions from other systems happen where the team already is.',
       },
       {
-        feature: 'Slack Connect com parceiros externos',
-        benefit: 'Cliente e fornecedor no mesmo canal seguro — sem thread de e-mail infinita.',
+        feature: 'Slack Connect with external partners',
+        benefit: 'Customer and vendor in the same secure channel — no endless email thread.',
       },
     ],
     pricing_notes:
-      'Free tier limitado (90 dias de histórico). Pro ~€7,25/usuário/mês, Business+ ~€12,50. Enterprise sob consulta.',
+      'Limited free tier (90 days of history). Pro ~€7.25/user/month, Business+ ~€12.50. Enterprise on request.',
     common_objections: [
       {
-        objection: 'Já temos Microsoft Teams incluso no pacote.',
+        objection: 'We already have Microsoft Teams in the package.',
         model_answer:
-          '“Incluso” não é “usado”. Pergunte ao time onde a conversa de verdade acontece. Slack ganha em UX, busca e integrações.',
+          '"Included" is not "used". Ask the team where the real conversation happens. Slack wins on UX, search and integrations.',
       },
       {
-        objection: 'Slack vira distração e ruído.',
+        objection: 'Slack becomes distraction and noise.',
         model_answer:
-          'Ruído é cultura, não ferramenta. Canais bem desenhados + notificações configuradas geram menos interrupção que e-mail.',
+          'Noise is culture, not the tool. Well-designed channels + configured notifications create less interruption than email.',
       },
       {
-        objection: 'É caro para ferramenta de chat.',
+        objection: 'It is expensive for a chat tool.',
         model_answer:
-          'Chat é 20% do valor. O resto é busca do conhecimento da empresa, automação e integração — quanto custa a informação que se perde hoje?',
+          'Chat is 20% of the value. The rest is searching company knowledge, automation and integration — what does the information lost today cost?',
       },
       {
-        objection: 'Segurança/compliance não aprova.',
+        objection: 'Security/compliance will not approve it.',
         model_answer:
-          'Slack tem certificações enterprise (SOC 2, ISO 27001, HIPAA no plano certo) e controles de retenção/DLP. O que o compliance exige?',
+          'Slack has enterprise certifications (SOC 2, ISO 27001, HIPAA on the right plan) and retention/DLP controls. What does compliance require?',
       },
       {
-        objection: 'O time vai resistir a mudar de hábito.',
+        objection: 'The team will resist changing habits.',
         model_answer:
-          'Migração por equipe-piloto: um time campeão prova o valor em 2 semanas e o resto pede para entrar.',
+          'Migrate by pilot team: one champion team proves the value in 2 weeks and the rest ask to join.',
       },
     ],
     competitors: [
       {
         name: 'Microsoft Teams',
         key_difference:
-          'Teams vem “grátis” no Microsoft 365; Slack ganha em experiência, velocidade, busca e ecossistema de apps.',
+          'Teams comes "free" with Microsoft 365; Slack wins on experience, speed, search and app ecosystem.',
       },
       {
         name: 'Google Chat',
         key_difference:
-          'Google Chat é básico e serve quem vive no Workspace; Slack é uma plataforma de trabalho, não só chat.',
+          'Google Chat is basic and serves those living in Workspace; Slack is a work platform, not just chat.',
       },
       {
         name: 'Discord',
         key_difference:
-          'Discord domina comunidades; não tem os controles corporativos, compliance e integrações B2B do Slack.',
+          'Discord dominates communities; it lacks Slack’s corporate controls, compliance and B2B integrations.',
       },
     ],
   },

@@ -65,7 +65,7 @@ export function Scorecard() {
   if (!session || !evaluation) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center text-slate-400">
-        Scorecard não encontrado.{' '}
+        Scorecard not found.{' '}
         <button className="text-accent-soft underline" onClick={() => navigate('/')}>
           ← Home
         </button>

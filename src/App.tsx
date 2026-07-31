@@ -41,7 +41,7 @@ function Nav() {
     { to: '/progress', label: t('nav.progress') },
     { to: '/library', label: t('nav.library') },
   ];
-  const langs: UiLanguage[] = ['pt', 'it', 'en'];
+  const langs: UiLanguage[] = ['en', 'pt', 'it'];
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-800 bg-surface/90 backdrop-blur">

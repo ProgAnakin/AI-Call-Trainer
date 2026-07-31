@@ -82,7 +82,7 @@ export function Call() {
   if (!scenario || !persona || !product) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center text-slate-400">
-        Cenário não encontrado.{' '}
+        Scenario not found.{' '}
         <button className="text-accent-soft underline" onClick={() => navigate('/')}>
           ← Home
         </button>
