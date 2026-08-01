@@ -49,16 +49,20 @@ async function invokeEdgeFunction<T>(name: string, body: Record<string, unknown>
   if (!supabase) throw new Error('supabase not configured');
   const { data, error } = await supabase.functions.invoke(name, { body });
   if (error) {
-    let message = error.message;
+    let detail = error.message;
     if (error instanceof FunctionsHttpError) {
       try {
         const payload = (await error.context.json()) as { error?: string };
-        if (payload?.error) message = payload.error;
+        if (payload?.error) detail = payload.error;
       } catch {
         // corpo não-JSON: mantém a mensagem genérica
       }
     }
-    throw new Error(`${name}: ${message}`);
+    // Loga o detalhe real para devs, mas nunca vaza erro bruto de backend/API
+    // ao usuário — só o sinal de rate-limit, que a UI precisa distinguir.
+    console.error(`[${name}]`, detail);
+    if (/limit/i.test(detail)) throw new Error(detail);
+    throw new Error(`${name}: request failed`);
   }
   return data as T;
 }

@@ -24,9 +24,14 @@ function download(filename: string, content: string, mime: string): void {
   URL.revokeObjectURL(url);
 }
 
-/** Escapes a value for CSV (quotes wrap, inner quotes doubled). */
+/**
+ * Escapes a value for CSV (quotes wrap, inner quotes doubled) AND neutralizes
+ * spreadsheet formula injection: a cell starting with = + - @ (or tab/CR) is
+ * executed as a formula by Excel/Sheets, so we prefix it with a single quote.
+ */
 export function csvCell(value: unknown): string {
-  const s = value === null || value === undefined ? '' : String(value);
+  let s = value === null || value === undefined ? '' : String(value);
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return `"${s.replaceAll('"', '""')}"`;
 }
 

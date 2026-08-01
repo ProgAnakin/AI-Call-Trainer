@@ -20,6 +20,14 @@ describe('csvCell', () => {
     expect(csvCell(null)).toBe('""');
     expect(csvCell(undefined)).toBe('""');
   });
+
+  it('neutralizes spreadsheet formula injection', () => {
+    expect(csvCell('=SUM(A1)')).toBe(`"'=SUM(A1)"`);
+    expect(csvCell('+cmd')).toBe(`"'+cmd"`);
+    expect(csvCell('-2+3')).toBe(`"'-2+3"`);
+    expect(csvCell('@x')).toBe(`"'@x"`);
+    expect(csvCell('safe=y')).toBe('"safe=y"'); // only a leading formula char is risky
+  });
 });
 
 describe('toCsv', () => {

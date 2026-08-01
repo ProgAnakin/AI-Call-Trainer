@@ -1,15 +1,15 @@
 import type { Evaluation, Persona, Product, Scenario, Session, Turn } from '@/types';
-import { supabase } from './supabase';
 import { SEED_PRODUCTS } from '@/data/seed/products';
 import { SEED_PERSONAS } from '@/data/seed/personas';
 import { SEED_SCENARIOS } from '@/data/seed/scenarios';
 
 /**
  * Camada de persistência única para o app.
- * - Com Supabase configurado: sessions/turns/evaluations vão para o Postgres.
- * - Sem Supabase (modo demo): tudo vive no localStorage.
- * Conteúdo custom da Biblioteca (produtos/personas/cenários) fica sempre no
- * localStorage — é conteúdo pessoal do dispositivo, sem necessidade de conta.
+ * - localStorage é sempre a fonte da verdade (sessions/turns/evaluations e o
+ *   conteúdo custom da Biblioteca vivem aqui).
+ * - A cópia na nuvem para uso multi-dispositivo é feita pelo backup por usuário
+ *   (tabela user_backups, protegida por RLS em auth.uid()), não escrevendo linha
+ *   a linha em tabelas abertas. Ver lib/cloudSync.ts.
  */
 
 const LS_KEYS = {
@@ -93,15 +93,6 @@ export function deleteCustom(kind: 'products' | 'personas' | 'scenarios', id: st
 
 export async function createSession(session: Session): Promise<Session> {
   upsertLs(LS_KEYS.sessions, session);
-  if (supabase) {
-    const { error } = await supabase.from('sessions').insert({
-      id: session.id,
-      scenario_id: session.scenario_id,
-      started_at: session.started_at,
-      mode: session.mode,
-    });
-    if (error) console.warn('supabase sessions.insert:', error.message);
-  }
   return session;
 }
 
@@ -117,30 +108,15 @@ export async function finishSession(
     s.outcome = outcome;
     writeLs(LS_KEYS.sessions, sessions);
   }
-  if (supabase) {
-    const { error } = await supabase
-      .from('sessions')
-      .update({ ended_at: endedAt, outcome })
-      .eq('id', sessionId);
-    if (error) console.warn('supabase sessions.update:', error.message);
-  }
 }
 
 export async function saveTurn(turn: Turn): Promise<Turn> {
   upsertLs(LS_KEYS.turns, turn);
-  if (supabase) {
-    const { error } = await supabase.from('turns').insert(turn);
-    if (error) console.warn('supabase turns.insert:', error.message);
-  }
   return turn;
 }
 
 export async function saveEvaluation(evaluation: Evaluation): Promise<Evaluation> {
   upsertLs(LS_KEYS.evaluations, evaluation);
-  if (supabase) {
-    const { error } = await supabase.from('evaluations').insert(evaluation);
-    if (error) console.warn('supabase evaluations.insert:', error.message);
-  }
   return evaluation;
 }
 
