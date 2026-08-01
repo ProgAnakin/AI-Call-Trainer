@@ -25,6 +25,14 @@ automatically — no need to create them.
 > Optional (only if you want to change the defaults): `ANTHROPIC_MODEL`,
 > `ANTHROPIC_EVAL_MODEL`, `MAX_CALLS_PER_DAY`, `MAX_EVALS_PER_DAY`,
 > `MAX_TURNS_PER_CALL`. See the table in the main README.
+>
+> Recommended for security: set `ALLOWED_ORIGINS` to your exact site origin(s),
+> comma-separated (e.g. `https://your-app.vercel.app`). This restricts who can
+> call the functions via a browser. localhost is always allowed for dev; if you
+> leave it unset, any `*.vercel.app` origin is accepted as a fallback.
+
+> Note: `roleplay.ts` and `evaluate.ts` here are **auto-generated** from
+> `supabase/functions/` by `build.mjs` — don't edit them by hand.
 
 ---
 

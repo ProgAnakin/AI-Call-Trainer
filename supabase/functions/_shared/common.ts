@@ -1,16 +1,53 @@
 // Utilidades compartilhadas pelas Edge Functions (Deno runtime).
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+/**
+ * Origin allowlist. Set the `ALLOWED_ORIGINS` secret to a comma-separated list
+ * of your exact site origins for the tightest policy, e.g.
+ *   supabase secrets set ALLOWED_ORIGINS=https://your-app.vercel.app
+ * localhost is always allowed for development; when the secret is unset we fall
+ * back to any *.vercel.app deployment so the app keeps working out of the box.
+ */
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-export function json(body: unknown, status = 200): Response {
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  let host: string;
+  try {
+    host = new URL(origin).hostname;
+  } catch {
+    return false;
+  }
+  if (host === 'localhost' || host === '127.0.0.1') return true; // dev
+  if (ALLOWED_ORIGINS.length > 0) return ALLOWED_ORIGINS.includes(origin);
+  return host.endsWith('.vercel.app'); // permissive default until configured
+}
+
+/** Per-request CORS headers: reflect the origin only if it is allowed. */
+export function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? '';
+  return {
+    // A non-matching value here makes the browser block a disallowed origin.
+    'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin : 'null',
+    Vary: 'Origin',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
+
+/** First hop client IP from the edge proxy headers. */
+export function clientIp(req: Request): string {
+  const xff = req.headers.get('x-forwarded-for') ?? '';
+  return xff.split(',')[0].trim() || 'unknown';
+}
+
+export function json(body: unknown, status = 200, cors: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...cors, 'Content-Type': 'application/json' },
   });
 }
 
@@ -49,12 +86,17 @@ export async function checkAndLogUsage(
   deviceId: string,
   kind: 'roleplay_call' | 'evaluate',
   maxPerDay: number,
-  sessionKey?: string,
+  opts: { sessionKey?: string; ip?: string; maxPerIpPerDay?: number } = {},
 ): Promise<{ ok: boolean; reason?: string }> {
   const db = adminClient();
   const since = new Date();
   since.setUTCHours(0, 0, 0, 0);
+  const sinceIso = since.toISOString();
+  const { sessionKey, ip } = opts;
+  const maxPerIp = opts.maxPerIpPerDay ?? maxPerDay * 4;
+  const hasIp = Boolean(ip) && ip !== 'unknown';
 
+  // Dedup: the same call (session_key) counts once, even across turns.
   if (sessionKey) {
     const { count: dup } = await db
       .from('usage_events')
@@ -65,18 +107,36 @@ export async function checkAndLogUsage(
     if ((dup ?? 0) > 0) return { ok: true }; // call já contada hoje
   }
 
+  // Per-IP cap — defeats device_id rotation from a single host. Counts a pseudo
+  // "device" keyed by `ip:<addr>`, so it needs no schema change.
+  if (hasIp) {
+    const { count: ipCount } = await db
+      .from('usage_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('device_id', `ip:${ip}`)
+      .eq('kind', kind)
+      .gte('created_at', sinceIso);
+    if ((ipCount ?? 0) >= maxPerIp) return { ok: false, reason: `daily limit reached (ip/${kind})` };
+  }
+
+  // Per-device cap.
   const { count } = await db
     .from('usage_events')
     .select('id', { count: 'exact', head: true })
     .eq('device_id', deviceId)
     .eq('kind', kind)
-    .gte('created_at', since.toISOString());
-
+    .gte('created_at', sinceIso);
   if ((count ?? 0) >= maxPerDay) {
     return { ok: false, reason: `daily limit reached (${maxPerDay}/${kind})` };
   }
 
+  // Log both counters (one row per call, thanks to the dedup above).
   await db.from('usage_events').insert({ device_id: deviceId, kind, session_key: sessionKey ?? null });
+  if (hasIp) {
+    await db
+      .from('usage_events')
+      .insert({ device_id: `ip:${ip}`, kind, session_key: sessionKey ?? null });
+  }
   return { ok: true };
 }
 

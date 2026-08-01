@@ -14,6 +14,9 @@ import type { AuthUser } from './auth';
 
 const TABLE = 'user_backups';
 
+/** Hard cap on a synced backup (guards cloud-storage abuse). ~2 MB. */
+const MAX_BACKUP_BYTES = 2_000_000;
+
 export type SyncResult =
   | { ok: true; newSessions?: number }
   | { ok: false; error: string };
@@ -22,6 +25,9 @@ export type SyncResult =
 export async function pushBackup(user: AuthUser): Promise<SyncResult> {
   if (!supabase) return { ok: false, error: 'sync-unavailable' };
   const backup = readBackup();
+  if (JSON.stringify(backup).length > MAX_BACKUP_BYTES) {
+    return { ok: false, error: 'backup-too-large' };
+  }
   const { error } = await supabase
     .from(TABLE)
     .upsert(

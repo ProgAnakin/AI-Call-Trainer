@@ -4,7 +4,8 @@
 import {
   callClaude,
   checkAndLogUsage,
-  corsHeaders,
+  clientIp,
+  corsHeadersFor,
   EVAL_MODEL,
   json,
   LIMITS,
@@ -145,18 +146,26 @@ function parseEvaluation(raw: string, framework: Body['framework']): EvalResult 
   return parsed;
 }
 
+const MAX_TRANSCRIPT_CHARS = 40000;
+
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
+  const cors = corsHeadersFor(req);
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405, cors);
 
   try {
     const body = (await req.json()) as Body;
     if (!body.device_id || !Array.isArray(body.transcript) || body.transcript.length === 0) {
-      return json({ error: 'invalid payload' }, 400);
+      return json({ error: 'invalid payload' }, 400, cors);
     }
 
-    const usage = await checkAndLogUsage(body.device_id, 'evaluate', LIMITS.maxEvaluationsPerDay);
-    if (!usage.ok) return json({ error: usage.reason }, 429);
+    const transcriptChars = body.transcript.reduce((n, t) => n + (t?.content?.length ?? 0), 0);
+    if (transcriptChars > MAX_TRANSCRIPT_CHARS) return json({ error: 'payload too large' }, 413, cors);
+
+    const usage = await checkAndLogUsage(body.device_id, 'evaluate', LIMITS.maxEvaluationsPerDay, {
+      ip: clientIp(req),
+    });
+    if (!usage.ok) return json({ error: usage.reason }, 429, cors);
 
     const transcriptText = body.transcript
       .map((t) => `${t.speaker === 'rep' ? 'REP' : 'PROSPECT'}: ${t.content}`)
@@ -180,9 +189,9 @@ Deno.serve(async (req) => {
       result = parseEvaluation(await ask(), body.framework);
     }
 
-    return json(result);
+    return json(result, 200, cors);
   } catch (e) {
     console.error('evaluate error:', e);
-    return json({ error: e instanceof Error ? e.message : 'internal error' }, 500);
+    return json({ error: 'internal error' }, 500, cors);
   }
 });
