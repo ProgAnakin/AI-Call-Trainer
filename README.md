@@ -131,6 +131,8 @@ viable.
 
 ### Cold email lab (`/email`)
 
+<p align="center"><img src="docs/screenshots/email-lab.png" alt="Cold email lab: score, per-dimension checks and tips" width="640"></p>
+
 Outreach isn't just calls. Paste a cold email (subject + body) and get an instant
 **heuristic score** with per-dimension checks — length, a clear CTA, customer-focus
 (you vs. we), spam triggers, clichéd openers, subject line — plus targeted tips and a
