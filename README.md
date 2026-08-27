@@ -129,6 +129,14 @@ reflex to respond fast instead of overthinking.
 Runs entirely client-side: **zero API cost and no latency**, which is what makes rapid-fire
 viable.
 
+### Cold email lab (`/email`)
+
+Outreach isn't just calls. Paste a cold email (subject + body) and get an instant
+**heuristic score** with per-dimension checks — length, a clear CTA, customer-focus
+(you vs. we), spam triggers, clichéd openers, subject line — plus targeted tips and a
+personal best. Runs entirely client-side, **zero API cost**, in PT/IT/EN. Hitting 80+
+unlocks the *Copywriter* achievement.
+
 ### Progress dashboard (`/progress`)
 
 <p align="center"><img src="docs/screenshots/progress.png" alt="Progress dashboard: level ring, achievements and skill matrix" width="720"></p>

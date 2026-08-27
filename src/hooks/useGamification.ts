@@ -5,6 +5,7 @@ import {
   type Gamification,
 } from '@/lib/gamification';
 import { getDrillBest } from '@/lib/objections';
+import { getEmailBest } from '@/lib/coldEmail';
 import { getScenario, listEvaluations, listProducts, listSessions } from '@/lib/storage';
 import { computeStreak, localDay } from './useProgress';
 
@@ -38,6 +39,6 @@ export function useGamification(): Gamification {
       0,
     );
 
-    return computeGamification({ calls, streakDays, bestDrillScore });
+    return computeGamification({ calls, streakDays, bestDrillScore, bestEmailScore: getEmailBest() ?? 0 });
   }, []);
 }

@@ -18,6 +18,7 @@ const Scorecard = lazy(() => import('@/pages/Scorecard').then((m) => ({ default:
 const Progress = lazy(() => import('@/pages/Progress').then((m) => ({ default: m.Progress })));
 const Library = lazy(() => import('@/pages/Library').then((m) => ({ default: m.Library })));
 const Drill = lazy(() => import('@/pages/Drill').then((m) => ({ default: m.Drill })));
+const EmailLab = lazy(() => import('@/pages/EmailLab').then((m) => ({ default: m.EmailLab })));
 const Legal = lazy(() => import('@/pages/Legal').then((m) => ({ default: m.Legal })));
 
 /** Link "pular para o conteúdo" — invisível até receber foco por teclado. */
@@ -38,6 +39,7 @@ function Nav() {
   const links = [
     { to: '/', label: t('nav.home') },
     { to: '/drill', label: t('nav.drill') },
+    { to: '/email', label: t('nav.email') },
     { to: '/progress', label: t('nav.progress') },
     { to: '/library', label: t('nav.library') },
   ];
@@ -121,6 +123,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/drill" element={<Drill />} />
+                <Route path="/email" element={<EmailLab />} />
                 <Route path="/call/:scenarioId" element={<Call />} />
                 <Route path="/scorecard/:sessionId" element={<Scorecard />} />
                 <Route path="/progress" element={<Progress />} />

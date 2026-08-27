@@ -18,12 +18,20 @@ export function Home() {
           <h1 className="text-2xl font-bold">{t('home.title')}</h1>
           <p className="mt-1 text-sm text-slate-400">{t('home.subtitle')}</p>
         </div>
-        <Link
-          to="/drill"
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-surface-raised px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:border-accent hover:text-white"
-        >
-          🥊 {t('home.quickDrill')} →
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/drill"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-surface-raised px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:border-accent hover:text-white"
+          >
+            🥊 {t('home.quickDrill')} →
+          </Link>
+          <Link
+            to="/email"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-surface-raised px-3 py-2 text-sm font-medium text-slate-200 transition-colors hover:border-accent hover:text-white"
+          >
+            ✉️ {t('home.emailLab')} →
+          </Link>
+        </div>
       </div>
 
       <NextBestAction />
