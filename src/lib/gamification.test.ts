@@ -138,6 +138,6 @@ describe('computeGamification', () => {
     expect(g.xp).toBe(115 + 80);
     expect(g.level.level).toBe(1);
     expect(g.unlockedCount).toBeGreaterThan(0);
-    expect(g.achievements).toHaveLength(12);
+    expect(g.achievements).toHaveLength(13);
   });
 });

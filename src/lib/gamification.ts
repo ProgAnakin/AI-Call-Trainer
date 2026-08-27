@@ -23,6 +23,8 @@ export interface GamificationInput {
   streakDays: number;
   /** Melhor média de rajada (0-10) entre todos os produtos. */
   bestDrillScore: number;
+  /** Melhor nota no Cold Email Lab (0-100). Opcional. */
+  bestEmailScore?: number;
 }
 
 const XP_MEETING_BONUS = 25; // fechar um próximo passo vale mais que a nota
@@ -116,6 +118,7 @@ export function computeAchievements(input: GamificationInput): Achievement[] {
     { id: 'objection_ace', icon: '🥊', goal: 1, current: objAces },
     { id: 'polyglot', icon: '🌍', goal: 2, current: langs },
     { id: 'drill_master', icon: '🥋', goal: 8, current: Math.round(bestDrillScore) },
+    { id: 'copywriter', icon: '✉️', goal: 80, current: Math.round(input.bestEmailScore ?? 0) },
     { id: 'tough_closer', icon: '🦈', goal: 1, current: hardMeetings },
   ];
 
