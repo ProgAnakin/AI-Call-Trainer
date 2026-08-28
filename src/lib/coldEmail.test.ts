@@ -87,6 +87,30 @@ describe('analyzeEmail', () => {
     expect(long.tips).toContain('email.tip.tooLong');
   });
 
+  it('counts consecutive repeated pronouns (regression: the old regex skipped every other one)', () => {
+    // 5x "we" vs 4x "you": me-focused. A word-boundary regex that consumes the
+    // separator only sees ~half of a run, which could flip this verdict.
+    const a = analyzeEmail({
+      lang: 'en',
+      subject: 'About us',
+      body:
+        'We we we we we built this and it is great for you you you you, which is why the whole team ' +
+        'keeps saying the same thing over and over again to anyone who will listen to us about it.',
+    });
+    expect(check(a, 'youFocused')).toBe(false);
+  });
+
+  it('handles typographic apostrophes', () => {
+    const a = analyzeEmail({
+      lang: 'en',
+      subject: 'Ramping reps',
+      body:
+        'You’re growing fast and your new reps take months to ramp because nothing is documented, ' +
+        'so your deals stall. How do you handle that today? Would 15 minutes next week work for you?',
+    });
+    expect(check(a, 'youFocused')).toBe(true);
+  });
+
   it('works in Portuguese', () => {
     const a = analyzeEmail({
       lang: 'pt',

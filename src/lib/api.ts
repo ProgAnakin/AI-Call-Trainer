@@ -164,6 +164,15 @@ const DEMO_LINES = {
   },
 } as const;
 
+/**
+ * Minúscula na primeira letra para a fala emendar depois de "Mas/Però/But ".
+ * Preserva o "I" do inglês, que é sempre maiúsculo ("But i have seen" ✗).
+ */
+export function lowerFirst(text: string): string {
+  if (/^I(?=$|[\s'’,.])/.test(text)) return text;
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
 function demoProspect(payload: RoleplayPayload): Promise<RoleplayResult> {
   const { persona, history, scenario } = payload;
   const langFamily = scenario.language.startsWith('it')
@@ -188,8 +197,8 @@ function demoProspect(payload: RoleplayPayload): Promise<RoleplayResult> {
     const pain = persona.pain_points[(repTurns - 3) % persona.pain_points.length];
     const objection = objections[(repTurns - 1) % objections.length];
     reply = L.reveal(
-      `${pain.charAt(0).toLowerCase()}${pain.slice(1)}`,
-      objection ? objection.charAt(0).toLowerCase() + objection.slice(1) : L.fallbackObjection,
+      lowerFirst(pain),
+      objection ? lowerFirst(objection) : L.fallbackObjection,
     );
   } else {
     reply = objections[(repTurns - 1) % objections.length] ?? L.continue;
