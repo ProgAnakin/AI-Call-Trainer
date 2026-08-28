@@ -67,24 +67,18 @@ function words(text: string): string[] {
   return text.trim().split(/\s+/).filter(Boolean);
 }
 
+/**
+ * Conta quantas palavras do texto estão no conjunto `tokens`.
+ *
+ * Tokeniza uma vez e consulta um Set: exato (um regex global com delimitadores
+ * consumia o separador e perdia ocorrências consecutivas, ex. "you you you"
+ * contava 2) e linear, em vez de compilar um regex por token.
+ */
 function countTokens(text: string, tokens: string[]): number {
-  const lower = ` ${text.toLowerCase()} `;
-  let n = 0;
-  for (const t of tokens) {
-    // multi-word phrases: substring; single words: whole-word match.
-    if (t.includes(' ') || t.includes('$') || t.includes('%')) {
-      if (lower.includes(t)) n++;
-    } else {
-      const re = new RegExp(`(^|[^\\p{L}])${escapeRe(t)}([^\\p{L}]|$)`, 'giu');
-      const m = lower.match(re);
-      if (m) n += m.length;
-    }
-  }
-  return n;
-}
-
-function escapeRe(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const set = new Set(tokens.filter((t) => !t.includes(' ')));
+  // Normaliza a apóstrofe tipográfica (’) para casar "you're"/"l'idea".
+  const wordsInText = text.toLowerCase().replaceAll('’', "'").match(/[\p{L}']+/gu) ?? [];
+  return wordsInText.reduce((n, w) => (set.has(w) ? n + 1 : n), 0);
 }
 
 function hasAny(text: string, phrases: string[]): boolean {

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { clsx } from 'clsx';
 import {
   analyzeEmail,
   getEmailBest,
@@ -42,7 +41,10 @@ export function EmailLab() {
     setBest(getEmailBest());
   };
 
+  /** "Clear" limpa o rascunho inteiro, não só o resultado (o rótulo promete isso). */
   const reset = () => {
+    setSubject('');
+    setBody('');
     setResult(null);
     setNewRecord(false);
   };
@@ -117,7 +119,7 @@ export function EmailLab() {
             </p>
             <ul className="space-y-1.5">
               {result.tips.map((tip) => (
-                <li key={tip} className={clsx('text-sm', 'text-slate-300')}>
+                <li key={tip} className="text-sm text-slate-300">
                   • {t(tip as TKey)}
                 </li>
               ))}

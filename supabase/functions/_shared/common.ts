@@ -78,15 +78,31 @@ export const LIMITS = {
   maxEvaluationsPerDay: envInt('MAX_EVALS_PER_DAY', 8),
 };
 
+interface Tally {
+  /** LLM requests logged today for this counter key. */
+  requests: number;
+  /** Distinct calls (session_key) today; rows without a key count individually. */
+  calls: number;
+  /** Session keys already counted today — lets a running call keep its turns. */
+  seen: Set<string>;
+}
+
 /**
  * Rate limiting por device/dia sobre a tabela usage_events.
- * `sessionKey` deduplica: a mesma call conta uma vez só em roleplay_call.
+ *
+ * DUAS travas, porque uma call são muitos requests ao LLM:
+ *  - `requests/dia` é o que realmente limita o custo (todo request conta);
+ *  - `calls/dia` (session_key distintos) limita quantas sessões novas começam.
+ *
+ * Importante: um session_key já visto NÃO é um passe livre — ele apenas não
+ * consome uma nova "call". O request continua contando. (Antes, o dedup dava
+ * return antecipado e permitia requests ilimitados replicando a mesma sessão.)
  */
 export async function checkAndLogUsage(
   deviceId: string,
   kind: 'roleplay_call' | 'evaluate',
   maxPerDay: number,
-  opts: { sessionKey?: string; ip?: string; maxPerIpPerDay?: number } = {},
+  opts: { sessionKey?: string; ip?: string; maxPerIpPerDay?: number; maxRequestsPerDay?: number } = {},
 ): Promise<{ ok: boolean; reason?: string }> {
   const db = adminClient();
   const since = new Date();
@@ -94,43 +110,49 @@ export async function checkAndLogUsage(
   const sinceIso = since.toISOString();
   const { sessionKey, ip } = opts;
   const maxPerIp = opts.maxPerIpPerDay ?? maxPerDay * 4;
+  const maxRequests = opts.maxRequestsPerDay ?? maxPerDay * LIMITS.maxTurnsPerCall;
   const hasIp = Boolean(ip) && ip !== 'unknown';
 
-  // Dedup: the same call (session_key) counts once, even across turns.
-  if (sessionKey) {
-    const { count: dup } = await db
+  /** Uma consulta por chave de contagem: linhas = requests, session_key = calls. */
+  const tally = async (key: string, cap: number): Promise<Tally> => {
+    const { data } = await db
       .from('usage_events')
-      .select('id', { count: 'exact', head: true })
-      .eq('device_id', deviceId)
+      .select('session_key')
+      .eq('device_id', key)
       .eq('kind', kind)
-      .eq('session_key', sessionKey);
-    if ((dup ?? 0) > 0) return { ok: true }; // call já contada hoje
-  }
+      .gte('created_at', sinceIso)
+      .limit(cap + 1); // basta saber que estourou; não carrega o dia inteiro
+    const rows = (data ?? []) as { session_key: string | null }[];
+    const keys = rows
+      .map((r) => r.session_key)
+      .filter((k): k is string => typeof k === 'string' && k.length > 0);
+    const distinct = new Set(keys);
+    return { requests: rows.length, calls: distinct.size + (rows.length - keys.length), seen: distinct };
+  };
 
-  // Per-IP cap — defeats device_id rotation from a single host. Counts a pseudo
-  // "device" keyed by `ip:<addr>`, so it needs no schema change.
-  if (hasIp) {
-    const { count: ipCount } = await db
-      .from('usage_events')
-      .select('id', { count: 'exact', head: true })
-      .eq('device_id', `ip:${ip}`)
-      .eq('kind', kind)
-      .gte('created_at', sinceIso);
-    if ((ipCount ?? 0) >= maxPerIp) return { ok: false, reason: `daily limit reached (ip/${kind})` };
+  const dev = await tally(deviceId, maxRequests);
+  if (dev.requests >= maxRequests) {
+    return { ok: false, reason: `daily request limit reached (${kind})` };
   }
-
-  // Per-device cap.
-  const { count } = await db
-    .from('usage_events')
-    .select('id', { count: 'exact', head: true })
-    .eq('device_id', deviceId)
-    .eq('kind', kind)
-    .gte('created_at', sinceIso);
-  if ((count ?? 0) >= maxPerDay) {
+  // Só uma sessão NOVA consome uma call; turnos de uma call em andamento não.
+  if (!(sessionKey && dev.seen.has(sessionKey)) && dev.calls >= maxPerDay) {
     return { ok: false, reason: `daily limit reached (${maxPerDay}/${kind})` };
   }
 
-  // Log both counters (one row per call, thanks to the dedup above).
+  // Mesmas travas por IP — derrota a rotação de device_id a partir de um host.
+  // Usa um pseudo-device `ip:<addr>`, então não exige mudança de schema.
+  if (hasIp) {
+    const ipCap = maxRequests * 4;
+    const byIp = await tally(`ip:${ip}`, ipCap);
+    if (byIp.requests >= ipCap) {
+      return { ok: false, reason: `daily request limit reached (ip/${kind})` };
+    }
+    if (!(sessionKey && byIp.seen.has(sessionKey)) && byIp.calls >= maxPerIp) {
+      return { ok: false, reason: `daily limit reached (ip/${kind})` };
+    }
+  }
+
+  // Todo request é registrado — é isso que faz a trava de custo valer.
   await db.from('usage_events').insert({ device_id: deviceId, kind, session_key: sessionKey ?? null });
   if (hasIp) {
     await db
