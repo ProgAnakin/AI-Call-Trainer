@@ -231,7 +231,10 @@ interface Body {
   transcript: { speaker: 'rep' | 'prospect'; content: string }[];
   call_type: string;
   framework: 'basic' | 'SPICED' | 'MEDDIC';
+  /** Idioma da call — as citações do transcript estão nele. */
   language: string;
+  /** Idioma da interface: em que escrever o feedback (lido, não falado). */
+  ui_language?: 'pt' | 'it' | 'en';
   success_criteria: string;
 }
 
@@ -254,6 +257,13 @@ const WEIGHTS: Record<Body['framework'], Record<string, number>> = {
     identify_pain: 20,
     champion: 15,
   },
+};
+
+/** Nome legível do idioma em que escrever o feedback. */
+const FEEDBACK_LANGUAGE: Record<'pt' | 'it' | 'en', string> = {
+  pt: 'português',
+  it: 'italiano',
+  en: 'inglês',
 };
 
 function criteriaOf(framework: Body['framework']): string[] {
@@ -288,7 +298,9 @@ function buildPrompt(body: Body): string {
 de ${body.call_type} usando o framework ${body.framework}.
 Os pesos de cada critério estão anotados no formato abaixo.
 Critério de sucesso da call: ${body.success_criteria}.
-Escreva os comentários em ${body.language}. Seja específico e cite o transcript.
+Escreva TODO o feedback em ${FEEDBACK_LANGUAGE[body.ui_language ?? 'en']}, mesmo que a call
+tenha sido em outro idioma. As citações literais do transcript ficam no idioma original.
+Seja específico e cite o transcript.
 Responda APENAS com JSON válido, sem markdown, neste formato exato:
 {
   "overall_score": 0-100,

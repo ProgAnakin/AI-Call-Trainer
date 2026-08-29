@@ -225,6 +225,7 @@ export const pt = {
   'drill.quit': 'Sair do treino',
   'drill.pressureMode': 'Modo pressão',
   'drill.pressureHint': 'Cronômetro de {s}s por objeção — responda rápido, como no telefone.',
+  'drill.adaptive': 'Modo adaptativo: a rajada vai priorizar as objeções que você trata pior ({n} já treinadas).',
   'drill.timeUp': 'Tempo esgotado',
 
   // Sincronização entre dispositivos (opt-in, requer Supabase)

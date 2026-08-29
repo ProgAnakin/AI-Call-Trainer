@@ -1,4 +1,5 @@
 import type { Product } from '@/types';
+import { localizedObjection } from '@/lib/objections';
 import { useT } from '@/i18n';
 
 /**
@@ -7,7 +8,7 @@ import { useT } from '@/i18n';
  * só as seções que o produto tem preenchidas.
  */
 export function BattleCard({ product }: { product: Product }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const heading = (label: string) => (
     <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</p>
   );
@@ -31,12 +32,15 @@ export function BattleCard({ product }: { product: Product }) {
         <div>
           {heading(t('battle.objections'))}
           <ul className="space-y-1.5">
-            {product.common_objections.map((o, i) => (
-              <li key={i} className="text-xs leading-relaxed">
-                <span className="italic text-amber-300">“{o.objection}”</span>
-                <span className="text-slate-400"> → {o.model_answer}</span>
-              </li>
-            ))}
+            {product.common_objections.map((raw, i) => {
+              const o = localizedObjection(raw, lang);
+              return (
+                <li key={i} className="text-xs leading-relaxed">
+                  <span className="italic text-amber-300">“{o.objection}”</span>
+                  <span className="text-slate-400"> → {o.model_answer}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

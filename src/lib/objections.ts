@@ -1,4 +1,4 @@
-import type { Language, ModelObjection, Product } from '@/types';
+import type { Language, ModelObjection, Product, UiLanguage } from '@/types';
 import { langFamilyOf, wordCount } from './metrics';
 import { DRILL_LENGTH, DRILL_SUBSTANCE_WORDS } from './thresholds';
 
@@ -82,6 +82,15 @@ export function scoreObjectionResponse(text: string, language: Language | 'pt' |
   return { score, acknowledged, explored, substantive, instantRebuttal, tipKeys };
 }
 
+/**
+ * Resolve a objeção no idioma da interface, caindo no texto base quando não há
+ * tradução (o caso de todo produto criado pelo usuário).
+ */
+export function localizedObjection(o: ModelObjection, lang: UiLanguage): ModelObjection {
+  const variant = o.i18n?.[lang];
+  return variant ? { objection: variant.objection, model_answer: variant.model_answer } : o;
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -91,9 +100,113 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-/** Monta a rajada de objeções de um produto (embaralhada). */
-export function buildGauntlet(product: Product, max = DRILL_LENGTH): ModelObjection[] {
-  return shuffle(product.common_objections).slice(0, max);
+// ---- Repetição espaçada: histórico por objeção (localStorage) ----
+
+export interface ObjectionStat {
+  attempts: number;
+  /** Média 0-10 das tentativas. */
+  avg: number;
+}
+
+/** { [productId]: { [objeçãoBase]: {n, sum} } } */
+type RawHistory = Record<string, Record<string, { n: number; sum: number }>>;
+
+const HISTORY_KEY = 'act.drill.history';
+
+function readHistory(): RawHistory {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? (JSON.parse(raw) as RawHistory) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Estatísticas por objeção de um produto.
+ *
+ * A chave é o texto BASE da objeção (nunca o traduzido), para o histórico
+ * sobreviver a uma troca de idioma da interface.
+ */
+export function getObjectionStats(productId: string): Record<string, ObjectionStat> {
+  const perProduct = readHistory()[productId] ?? {};
+  const out: Record<string, ObjectionStat> = {};
+  for (const [key, { n, sum }] of Object.entries(perProduct)) {
+    if (n > 0) out[key] = { attempts: n, avg: sum / n };
+  }
+  return out;
+}
+
+/** Registra o resultado de uma objeção (chave = texto base). */
+export function recordObjectionResult(
+  productId: string,
+  baseObjection: string,
+  score: number,
+): void {
+  try {
+    const history = readHistory();
+    const perProduct = history[productId] ?? (history[productId] = {});
+    const entry = perProduct[baseObjection] ?? (perProduct[baseObjection] = { n: 0, sum: 0 });
+    entry.n += 1;
+    entry.sum += score;
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch {
+    // localStorage indisponível: o drill funciona, só não adapta.
+  }
+}
+
+/**
+ * Peso de sorteio: quanto pior você vai numa objeção, mais ela aparece.
+ * Objeção nunca treinada tem o peso mais alto — primeiro cobrir o repertório,
+ * depois insistir nas fracas.
+ */
+export function weightOf(stat: ObjectionStat | undefined): number {
+  if (!stat || stat.attempts === 0) return 12;
+  return Math.max(1, 11 - stat.avg);
+}
+
+/** Sorteio ponderado sem reposição (rnd injetável para teste determinístico). */
+function sampleWeighted<T>(
+  items: T[],
+  weight: (item: T) => number,
+  k: number,
+  rnd: () => number,
+): T[] {
+  const pool = [...items];
+  const out: T[] = [];
+  while (out.length < k && pool.length > 0) {
+    const total = pool.reduce((s, i) => s + weight(i), 0);
+    let r = rnd() * total;
+    let idx = pool.length - 1;
+    for (let i = 0; i < pool.length; i++) {
+      r -= weight(pool[i]);
+      if (r <= 0) {
+        idx = i;
+        break;
+      }
+    }
+    out.push(pool.splice(idx, 1)[0]);
+  }
+  return out;
+}
+
+/**
+ * Monta a rajada de um produto. Sem histórico, embaralha; com histórico, sorteia
+ * com peso nas objeções que você trata pior (mantendo aleatoriedade para a
+ * rajada não ficar idêntica toda vez).
+ *
+ * Devolve as objeções BASE — quem exibe resolve o idioma com
+ * `localizedObjection`, para a chave do histórico não mudar com a interface.
+ */
+export function buildGauntlet(
+  product: Product,
+  max = DRILL_LENGTH,
+  stats?: Record<string, ObjectionStat>,
+  rnd: () => number = Math.random,
+): ModelObjection[] {
+  const list = product.common_objections;
+  if (!stats || Object.keys(stats).length === 0) return shuffle(list).slice(0, max);
+  return sampleWeighted(list, (o) => weightOf(stats[o.objection]), max, rnd);
 }
 
 // ---- Recorde pessoal por produto (localStorage) ----
