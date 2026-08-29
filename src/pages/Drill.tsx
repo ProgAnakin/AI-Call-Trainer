@@ -6,12 +6,15 @@ import type { Language, ModelObjection } from '@/types';
 import { listProducts } from '@/lib/storage';
 import {
   buildGauntlet,
+  getObjectionStats,
+  localizedObjection,
+  recordObjectionResult,
   getDrillBest,
   saveDrillBest,
   scoreObjectionResponse,
   type ObjectionEval,
 } from '@/lib/objections';
-import { DRILL_TIMER_SECONDS } from '@/lib/thresholds';
+import { DRILL_LENGTH, DRILL_TIMER_SECONDS } from '@/lib/thresholds';
 import { Badge, Button, Card, Select, Textarea } from '@/components/ui';
 import { useT } from '@/i18n';
 
@@ -48,10 +51,13 @@ export function Drill() {
 
   const product = products.find((p) => p.id === productId);
   const best = productId ? getDrillBest(productId) : null;
+  // Quantas objeções deste produto já foram treinadas — habilita o modo adaptativo.
+  const trainedCount = productId ? Object.keys(getObjectionStats(productId)).length : 0;
 
   const start = () => {
     if (!product || product.common_objections.length === 0) return;
-    setGauntlet(buildGauntlet(product));
+    // Com histórico, a rajada prioriza as objeções que você trata pior.
+    setGauntlet(buildGauntlet(product, DRILL_LENGTH, getObjectionStats(product.id)));
     setIndex(0);
     setAnswers([]);
     setDraft('');
@@ -65,7 +71,10 @@ export function Drill() {
     const text = draft.trim();
     if (!text && !force) return;
     const result = scoreObjectionResponse(text, objLanguage);
-    setAnswers((a) => [...a, { objection: gauntlet[index], response: text, result }]);
+    const objection = gauntlet[index];
+    // Histórico por objeção (chave = texto base) alimenta a próxima rajada.
+    if (productId) recordObjectionResult(productId, objection.objection, result.score);
+    setAnswers((a) => [...a, { objection, response: text, result }]);
     setPhase('reveal');
   };
 
@@ -151,12 +160,19 @@ export function Drill() {
               {t('drill.emptyProducts')}
             </p>
           ) : (
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-slate-500">
-                {best !== null ? t('drill.best', { n: best }) : t('drill.noBest')}
-              </p>
-              <Button onClick={start}>{t('drill.start')} →</Button>
-            </div>
+            <>
+              {trainedCount > 0 && (
+                <p className="rounded-lg border border-indigo-900/50 bg-indigo-950/20 px-3 py-2 text-xs text-indigo-200">
+                  🎯 {t('drill.adaptive', { n: trainedCount })}
+                </p>
+              )}
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-500">
+                  {best !== null ? t('drill.best', { n: best }) : t('drill.noBest')}
+                </p>
+                <Button onClick={start}>{t('drill.start')} →</Button>
+              </div>
+            </>
           )}
         </Card>
       </div>
@@ -186,7 +202,9 @@ export function Drill() {
                 <span className={clsx('w-8 shrink-0 font-mono text-sm font-bold', scoreTone(a.result.score))}>
                   {a.result.score}
                 </span>
-                <span className="truncate text-xs text-slate-400">“{a.objection.objection}”</span>
+                <span className="truncate text-xs text-slate-400">
+                  “{localizedObjection(a.objection, lang).objection}”
+                </span>
               </div>
             ))}
           </div>
@@ -197,13 +215,17 @@ export function Drill() {
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-emerald-300">
                   ✓ {t('drill.bestAnswer')}
                 </p>
-                <p className="text-xs italic text-slate-400">“{bestAnswer.objection.objection}”</p>
+                <p className="text-xs italic text-slate-400">
+                  “{localizedObjection(bestAnswer.objection, lang).objection}”
+                </p>
               </Card>
               <Card className="border-red-900/50">
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-red-300">
                   ↓ {t('drill.worstAnswer')}
                 </p>
-                <p className="text-xs italic text-slate-400">“{worstAnswer.objection.objection}”</p>
+                <p className="text-xs italic text-slate-400">
+                  “{localizedObjection(worstAnswer.objection, lang).objection}”
+                </p>
               </Card>
             </div>
           )}
@@ -220,7 +242,8 @@ export function Drill() {
   }
 
   // ---------- Active / Reveal ----------
-  const current = gauntlet[index];
+  // Exibe no idioma da interface; o histórico continua na chave base.
+  const current = localizedObjection(gauntlet[index], lang);
   const lastAnswer = answers[answers.length - 1];
 
   return (

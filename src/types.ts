@@ -13,8 +13,16 @@ export interface KeyFeature {
 }
 
 export interface ModelObjection {
+  /** Texto base (inglês nos produtos seed). */
   objection: string;
   model_answer: string;
+  /**
+   * Variantes por idioma da interface. O treino de objeção só vale se a
+   * objeção vier na língua em que você vende, então o drill e o battle card
+   * resolvem por aqui e caem no texto base quando falta uma tradução
+   * (produtos criados pelo usuário nunca precisam preencher isto).
+   */
+  i18n?: Partial<Record<UiLanguage, { objection: string; model_answer: string }>>;
 }
 
 export interface Competitor {

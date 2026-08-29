@@ -218,6 +218,7 @@ export const it: typeof pt = {
   'drill.quit': 'Esci dall’allenamento',
   'drill.pressureMode': 'Modalità pressione',
   'drill.pressureHint': 'Cronometro di {s}s per obiezione — rispondi in fretta, come al telefono.',
+  'drill.adaptive': 'Modalità adattiva: la raffica darà priorità alle obiezioni che gestisci peggio ({n} già allenate).',
   'drill.timeUp': 'Tempo scaduto',
 
   // Sincronizzazione tra dispositivi (opt-in, richiede Supabase)

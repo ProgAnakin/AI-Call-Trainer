@@ -7,10 +7,11 @@ import type {
   Product,
   Scenario,
   Turn,
+  UiLanguage,
 } from '@/types';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { getDeviceId, isSupabaseConfigured, supabase } from './supabase';
-import { computeMetrics, formatTalkRatio, langFamilyOf } from './metrics';
+import { computeMetrics, formatTalkRatio } from './metrics';
 import { TARGETS } from './thresholds';
 import { weightedOverall, getFramework } from '@/data/frameworks';
 
@@ -87,7 +88,13 @@ export interface EvaluatePayload {
   transcript: Pick<Turn, 'speaker' | 'content'>[];
   call_type: CallType;
   framework: FrameworkId;
+  /** Idioma da call — as citações do transcript saem nele. */
   language: Language;
+  /**
+   * Idioma da interface — o feedback do coach é LIDO, não falado, então segue
+   * o idioma que o usuário escolheu na UI (e não o da ligação).
+   */
+  ui_language: UiLanguage;
   success_criteria: string;
 }
 
@@ -130,7 +137,12 @@ export function isDemoMode(): boolean {
 // completo de UI sem custo. A avaliação usa só as métricas objetivas.
 // ---------------------------------------------------------------------------
 
-/** Falas fixas do prospect demo, na língua do cenário. */
+/**
+ * Falas fixas do prospect demo, na língua do cenário.
+ *
+ * `pt` e `ptPT` são conjuntos separados de propósito: um CEO português não diz
+ * "você está tomando meu tempo". Treinar num sotaque errado atrapalha o ouvido.
+ */
 const DEMO_LINES = {
   pt: {
     intro: (name: string) => `${name} falando. Quem é? Estou no meio de uma coisa aqui.`,
@@ -140,6 +152,16 @@ const DEMO_LINES = {
     fallbackObjection: 'não sei se é prioridade agora.',
     pressed: 'Você está tomando meu tempo. Última chance: qual é exatamente a proposta?',
     close: 'Está bem, você foi direto. Me mande um convite e a gente conversa.',
+    continue: 'Hmm. Continue.',
+  },
+  ptPT: {
+    intro: (name: string) => `${name}. Quem fala? Estou a meio de uma coisa.`,
+    generic: 'Certo... e porque é que isso me interessa?',
+    reveal: (pain: string, objection: string) =>
+      `Olhe... para ser franco, ${pain}. Mas ${objection}`,
+    fallbackObjection: 'não sei se é prioridade neste momento.',
+    pressed: 'Está a fazer-me perder tempo. Última hipótese: qual é exactamente a proposta?',
+    close: 'Está bem, foi directo. Envie-me um convite e falamos.',
     continue: 'Hmm. Continue.',
   },
   it: {
@@ -164,6 +186,14 @@ const DEMO_LINES = {
   },
 } as const;
 
+/** Conjunto de falas do idioma exato da call (pt-PT tem o seu próprio). */
+export function demoLinesFor(language: Language): (typeof DEMO_LINES)[keyof typeof DEMO_LINES] {
+  if (language === 'pt-PT') return DEMO_LINES.ptPT;
+  if (language.startsWith('it')) return DEMO_LINES.it;
+  if (language.startsWith('en')) return DEMO_LINES.en;
+  return DEMO_LINES.pt;
+}
+
 /**
  * Minúscula na primeira letra para a fala emendar depois de "Mas/Però/But ".
  * Preserva o "I" do inglês, que é sempre maiúsculo ("But i have seen" ✗).
@@ -175,12 +205,7 @@ export function lowerFirst(text: string): string {
 
 function demoProspect(payload: RoleplayPayload): Promise<RoleplayResult> {
   const { persona, history, scenario } = payload;
-  const langFamily = scenario.language.startsWith('it')
-    ? 'it'
-    : scenario.language.startsWith('en')
-      ? 'en'
-      : 'pt';
-  const L = DEMO_LINES[langFamily];
+  const L = demoLinesFor(scenario.language);
   const repTurns = history.filter((t) => t.speaker === 'rep').length;
   const lastRep = [...history].reverse().find((t) => t.speaker === 'rep')?.content ?? '';
   const objections = persona.hidden_objections;
@@ -277,8 +302,9 @@ const DEMO_FB = {
 } as const;
 
 function demoEvaluator(payload: EvaluatePayload): Promise<EvaluationDraft> {
-  const { transcript, framework, language } = payload;
-  const fam = langFamilyOf(language);
+  const { transcript, framework, language, ui_language } = payload;
+  // Feedback é texto lido → segue o idioma da interface, não o da ligação.
+  const fam = ui_language;
   const fb = DEMO_FB[fam];
   const now = new Date().toISOString();
   const metrics = computeMetrics(transcript, now, now, language);

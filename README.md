@@ -26,6 +26,14 @@ objection-by-objection breakdown, and one thing to focus on next time.
 
 **Languages:** 🇧🇷 pt-BR · 🇵🇹 pt-PT · 🇮🇹 it-IT · 🇺🇸 en-US (UI in PT / IT / EN)
 
+> **Two independent languages, on purpose.** The **UI language** is what you
+> *read* — navigation, the scorecard, and the coach's feedback all follow it.
+> The **call language** is what you *speak*: the prospect's lines, their
+> objections and the drill are in the scenario's language (shown by the flag).
+> So an English UI can coach you, in English, through a Portuguese cold call.
+> pt-BR and pt-PT are separate lexicons — a Lisbon CEO doesn't speak like a
+> São Paulo one.
+
 > **Why this exists.** SDRs only get to practise on live calls — burning real leads — or
 > in human roleplay, which is expensive and rarely available. The tools that solve this
 > are enterprise, priced per seat, and English-first. This one is free, built for a single
@@ -121,6 +129,13 @@ Rapid-fire objection practice — the drill an SDR actually repeats daily. Real 
 from the product library come at you one at a time; you answer, get an **instant score**
 (acknowledge → explore → respond), and see the **model answer** to compare against. Ends
 with an average, a per-objection breakdown, and a personal best per product.
+
+**Adaptive (spaced repetition).** Once you've drilled a product, the gauntlet
+weights selection toward the objections you handle *worst* — objections you've
+never seen rank highest, then the lowest-scoring ones, with enough randomness
+that no two runs are identical. History is keyed to the objection's base text,
+so it survives switching UI language. Seed objections are **localised (PT/IT/EN)**:
+you drill in the language you actually sell in.
 
 Optional **pressure mode** puts a 45-second countdown on each objection — run out of time
 and the answer auto-submits, exactly like freezing on a live call. Great for building the

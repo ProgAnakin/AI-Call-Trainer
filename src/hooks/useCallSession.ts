@@ -11,6 +11,7 @@ import type {
   Turn,
 } from '@/types';
 import { evaluateCall, roleplayTurn } from '@/lib/api';
+import { useT } from '@/i18n';
 import { frameworkForCallType } from '@/data/frameworks';
 import { pickMood } from '@/lib/moods';
 import { MAX_REP_TURNS } from '@/lib/thresholds';
@@ -54,6 +55,7 @@ export function useCallSession(
   persona: Persona | undefined,
   product: Product | undefined,
 ): UseCallSession {
+  const { lang } = useT();
   const [state, setState] = useState<CallState>('briefing');
   const [turns, setTurns] = useState<Turn[]>([]);
   const [session, setSession] = useState<Session | null>(null);
@@ -89,6 +91,7 @@ export function useCallSession(
           call_type: scenario.call_type,
           framework: frameworkForCallType(scenario.call_type),
           language: scenario.language,
+          ui_language: lang,
           success_criteria: scenario.success_criteria,
         });
         const ev: Evaluation = {
@@ -105,7 +108,7 @@ export function useCallSession(
         setState('error');
       }
     },
-    [session, scenario],
+    [session, scenario, lang],
   );
 
   /**

@@ -1,5 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { lowerFirst } from './api';
+import { demoLinesFor, lowerFirst } from './api';
+
+describe('demoLinesFor', () => {
+  it('gives pt-PT its own lexicon, not the Brazilian one', () => {
+    const br = demoLinesFor('pt-BR');
+    const pt = demoLinesFor('pt-PT');
+    expect(pt).not.toBe(br);
+    // European Portuguese uses the "estar a + infinitive" construction.
+    expect(pt.pressed).toMatch(/está a fazer-me perder tempo/i);
+    expect(br.pressed).toMatch(/tomando meu tempo/i);
+  });
+
+  it('maps the other languages to their own sets', () => {
+    expect(demoLinesFor('it-IT').generic).toMatch(/perché/i);
+    expect(demoLinesFor('en-US').generic).toMatch(/why should I care/i);
+    expect(demoLinesFor('pt-BR').generic).toMatch(/por que/i);
+  });
+
+  it('keeps the intro personalised per language', () => {
+    expect(demoLinesFor('pt-PT').intro('Ricardo')).toContain('Quem fala?');
+    expect(demoLinesFor('en-US').intro('Ana')).toContain('This is Ana');
+  });
+});
 
 describe('lowerFirst', () => {
   it('lowercases the first letter so the line flows after "But/Mas/Però"', () => {

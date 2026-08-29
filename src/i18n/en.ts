@@ -217,6 +217,7 @@ export const en: typeof pt = {
   'drill.quit': 'Quit drill',
   'drill.pressureMode': 'Pressure mode',
   'drill.pressureHint': '{s}s timer per objection — answer fast, like on the phone.',
+  'drill.adaptive': 'Adaptive: the gauntlet will prioritise the objections you handle worst ({n} trained so far).',
   'drill.timeUp': 'Time up',
 
   // Cross-device sync (opt-in, requires Supabase)
