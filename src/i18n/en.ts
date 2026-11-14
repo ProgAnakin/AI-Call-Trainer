@@ -311,6 +311,7 @@ export const en: typeof pt = {
 
   // Accessibility
   'a11y.skip': 'Skip to content',
+  'a11y.langGroup': 'Interface language',
 
   // Legal
   'legal.title': 'Privacy & Terms',
@@ -361,4 +362,9 @@ export const en: typeof pt = {
   'email.tip.subject': 'Weak subject — use something short (< 60 chars) and specific, not salesy.',
   'email.tip.exclaim': 'Fewer exclamation marks — it reads as desperate. One at most.',
   'email.tip.solid': 'Solid! Short, customer-focused, with a clear next step.',
+
+  // 404
+  'notFound.title': 'Page not found',
+  'notFound.body': 'That address does not exist. The scenario may have been deleted, or the link is wrong.',
+  'notFound.home': 'Back to home',
 };

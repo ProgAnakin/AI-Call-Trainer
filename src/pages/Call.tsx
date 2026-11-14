@@ -6,14 +6,15 @@ import { getPersona, getProduct, getScenario } from '@/lib/storage';
 import { useCallSession } from '@/hooks/useCallSession';
 import { useSpeech, type SpeechError } from '@/hooks/useSpeech';
 import { MOOD_EMOJI, moodLabelKey, pickMood } from '@/lib/moods';
+import * as safeStorage from '@/lib/safeStorage';
 import {
   Badge,
   Button,
   Card,
   DifficultyDots,
+  Field,
   Input,
   LANGUAGE_FLAGS,
-  Label,
   Select,
 } from '@/components/ui';
 import { Timer } from '@/components/call/Timer';
@@ -47,7 +48,7 @@ export function Call() {
   const voiceStorageKey = `act.voice.${scenario?.language ?? 'pt-BR'}`;
   const [mode, setMode] = useState<SessionMode>('voice');
   const [voiceURI, setVoiceURI] = useState<string>(
-    () => localStorage.getItem(voiceStorageKey) ?? '',
+    () => safeStorage.getItem(voiceStorageKey) ?? '',
   );
   const [draft, setDraft] = useState('');
   const [pendingVoiceText, setPendingVoiceText] = useState<string | null>(null);
@@ -92,8 +93,8 @@ export function Call() {
 
   const pickVoice = (uri: string) => {
     setVoiceURI(uri);
-    if (uri) localStorage.setItem(voiceStorageKey, uri);
-    else localStorage.removeItem(voiceStorageKey);
+    if (uri) safeStorage.setItem(voiceStorageKey, uri);
+    else safeStorage.removeItem(voiceStorageKey);
   };
 
   const sendLine = async (text: string) => {
@@ -264,15 +265,16 @@ export function Call() {
               )}
               {mode === 'voice' && speech.supported && speech.voices.length > 0 && (
                 <div className="mt-3">
-                  <Label>{t('briefing.voicePick')}</Label>
-                  <Select value={voiceURI} onChange={(e) => pickVoice(e.target.value)}>
-                    <option value="">{t('briefing.voiceDefault')}</option>
-                    {speech.voices.map((v) => (
-                      <option key={v.voiceURI} value={v.voiceURI}>
-                        {v.name} ({v.lang})
-                      </option>
-                    ))}
-                  </Select>
+                  <Field label={t('briefing.voicePick')}>
+                    <Select value={voiceURI} onChange={(e) => pickVoice(e.target.value)}>
+                      <option value="">{t('briefing.voiceDefault')}</option>
+                      {speech.voices.map((v) => (
+                        <option key={v.voiceURI} value={v.voiceURI}>
+                          {v.name} ({v.lang})
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
                 </div>
               )}
             </div>

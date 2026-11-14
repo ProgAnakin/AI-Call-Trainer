@@ -2,6 +2,7 @@ import type { Evaluation, Persona, Product, Scenario, Session, Turn } from '@/ty
 import { SEED_PRODUCTS } from '@/data/seed/products';
 import { SEED_PERSONAS } from '@/data/seed/personas';
 import { SEED_SCENARIOS } from '@/data/seed/scenarios';
+import * as safeStorage from '@/lib/safeStorage';
 
 /**
  * Camada de persistência única para o app.
@@ -22,16 +23,73 @@ const LS_KEYS = {
 } as const;
 
 function readLs<T>(key: string): T[] {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T[]) : [];
-  } catch {
-    return [];
-  }
+  const items = safeStorage.getJson<T[]>(key, []);
+  return Array.isArray(items) ? items : [];
 }
 
-function writeLs<T>(key: string, items: T[]): void {
-  localStorage.setItem(key, JSON.stringify(items));
+/** Chaves de histórico — podáveis. O catálogo custom do usuário nunca é podado. */
+const HISTORY_KEYS = [LS_KEYS.sessions, LS_KEYS.turns, LS_KEYS.evaluations] as const;
+
+/**
+ * Máximo de calls retidas. localStorage dá ~5 MB por origem e o transcript é o
+ * grosso do peso; 200 calls cabem com folga e mantêm os gráficos de progresso
+ * significativos. Acima disso, as mais antigas saem (ver `pruneHistory`).
+ */
+export const MAX_SESSIONS = 200;
+
+/**
+ * Mantém só as `max` calls mais recentes e descarta turnos/avaliações órfãos.
+ * Devolve quantas linhas saíram de cada coleção.
+ *
+ * Chamado de forma proativa ao salvar e como último recurso quando a cota
+ * estoura — assim uma call nova nunca é perdida por causa das antigas.
+ */
+export function pruneHistory(max = MAX_SESSIONS): {
+  sessions: number;
+  turns: number;
+  evaluations: number;
+} {
+  const sessions = readLs<Session>(LS_KEYS.sessions);
+  if (sessions.length <= max) return { sessions: 0, turns: 0, evaluations: 0 };
+
+  // Mais recentes primeiro; sessões sem data vão para o fim (saem primeiro).
+  const kept = [...sessions]
+    .sort((a, b) => (b.started_at ?? '').localeCompare(a.started_at ?? ''))
+    .slice(0, max);
+  const keptIds = new Set(kept.map((s) => s.id));
+
+  const turns = readLs<Turn>(LS_KEYS.turns);
+  const evaluations = readLs<Evaluation>(LS_KEYS.evaluations);
+  const keptTurns = turns.filter((t) => keptIds.has(t.session_id));
+  const keptEvals = evaluations.filter((e) => keptIds.has(e.session_id));
+
+  safeStorage.setJson(LS_KEYS.sessions, kept);
+  safeStorage.setJson(LS_KEYS.turns, keptTurns);
+  safeStorage.setJson(LS_KEYS.evaluations, keptEvals);
+
+  return {
+    sessions: sessions.length - kept.length,
+    turns: turns.length - keptTurns.length,
+    evaluations: evaluations.length - keptEvals.length,
+  };
+}
+
+/**
+ * Grava uma coleção. Devolve `true` se persistiu.
+ *
+ * Se a cota estourar numa chave de histórico, poda pela metade e tenta de novo
+ * — perder as calls mais antigas é muito melhor que perder a que acabou de
+ * acontecer. Em storage bloqueado devolve `false` sem lançar: o app segue
+ * funcionando na memória da sessão.
+ */
+function writeLs<T>(key: string, items: T[]): boolean {
+  if (safeStorage.setJson(key, items)) return true;
+  if (!(HISTORY_KEYS as readonly string[]).includes(key)) return false;
+
+  const sessionCount = readLs<Session>(LS_KEYS.sessions).length;
+  if (sessionCount < 2) return false; // nada a podar: é o storage que está negado
+  pruneHistory(Math.floor(sessionCount / 2));
+  return safeStorage.setJson(key, items);
 }
 
 function upsertLs<T extends { id: string }>(key: string, item: T): T {
@@ -93,6 +151,9 @@ export function deleteCustom(kind: 'products' | 'personas' | 'scenarios', id: st
 
 export async function createSession(session: Session): Promise<Session> {
   upsertLs(LS_KEYS.sessions, session);
+  // Poda no começo da call, não no fim: aqui uma falha de cota ainda não custa
+  // nada ao usuário, e libera espaço para o transcript que está por vir.
+  pruneHistory();
   return session;
 }
 

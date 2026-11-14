@@ -4,11 +4,11 @@ import type {
   ButtonHTMLAttributes,
   HTMLAttributes,
   InputHTMLAttributes,
-  LabelHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
+import type { UiLanguage } from '@/types';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -113,18 +113,23 @@ export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectE
   );
 }
 
-export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
-  return (
-    <label className={clsx('mb-1 block text-xs font-medium text-slate-400', className)} {...props} />
-  );
-}
-
+/**
+ * Rótulo + controle, com associação de verdade.
+ *
+ * Antes isto era uma `<div>` com um `<label>` solto ao lado do input: visualmente
+ * igual, mas sem vínculo programático nenhum. Um leitor de tela anunciava o
+ * campo sem nome, e clicar no texto não focava o input (falha de WCAG 1.3.1 e
+ * 4.1.2). Envolver o controle no próprio `<label>` cria a associação implícita,
+ * que funciona para input/textarea/select sem precisar gerar ids.
+ *
+ * Pressupõe um único controle por Field — é como todos os formulários usam.
+ */
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div>
-      <Label>{label}</Label>
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-slate-400">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 
@@ -149,4 +154,15 @@ export const LANGUAGE_FLAGS: Record<string, string> = {
   'pt-PT': '🇵🇹',
   'it-IT': '🇮🇹',
   'en-US': '🇺🇸',
+};
+
+/**
+ * Nome de cada idioma de interface, escrito nele mesmo — convenção de
+ * seletores de idioma, e por isso não passa pelo dicionário. Serve de nome
+ * acessível para os botões que mostram só a sigla.
+ */
+export const LANGUAGE_NAMES: Record<UiLanguage, string> = {
+  en: 'English',
+  pt: 'Português',
+  it: 'Italiano',
 };

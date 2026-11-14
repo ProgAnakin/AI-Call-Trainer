@@ -319,6 +319,7 @@ export const pt = {
 
   // Acessibilidade
   'a11y.skip': 'Pular para o conteúdo',
+  'a11y.langGroup': 'Idioma da interface',
 
   // Legal
   'legal.title': 'Privacidade & Termos',
@@ -369,4 +370,9 @@ export const pt = {
   'email.tip.subject': 'Assunto fraco — use algo curto (< 60 caracteres) e específico, sem parecer propaganda.',
   'email.tip.exclaim': 'Menos exclamações — soa desesperado. Uma no máximo.',
   'email.tip.solid': 'Sólido! Curto, focado no cliente e com um próximo passo claro.',
+
+  // 404
+  'notFound.title': 'Página não encontrada',
+  'notFound.body': 'Este endereço não existe. O cenário pode ter sido apagado, ou o link está errado.',
+  'notFound.home': 'Voltar ao início',
 };

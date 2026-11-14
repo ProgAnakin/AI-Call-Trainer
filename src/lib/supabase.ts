@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import * as safeStorage from '@/lib/safeStorage';
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -15,12 +16,20 @@ export const isSupabaseConfigured = supabase !== null;
 
 const DEVICE_ID_KEY = 'act.device_id';
 
-/** ID anônimo por dispositivo, usado para rate limiting nas Edge Functions. */
+/** Fallback em memória quando o storage está negado — ver getDeviceId(). */
+let memoryDeviceId: string | null = null;
+
+/**
+ * ID anônimo por dispositivo, usado para rate limiting nas Edge Functions.
+ *
+ * Com storage bloqueado não lança: cai para um id estável apenas nesta aba,
+ * assim a call em andamento não é contada como um device novo a cada request
+ * (o que furaria o limite por sessão).
+ */
 export function getDeviceId(): string {
-  let id = localStorage.getItem(DEVICE_ID_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(DEVICE_ID_KEY, id);
-  }
-  return id;
+  const stored = safeStorage.getItem(DEVICE_ID_KEY);
+  if (stored) return stored;
+  memoryDeviceId ??= crypto.randomUUID();
+  safeStorage.setItem(DEVICE_ID_KEY, memoryDeviceId); // no-op se bloqueado
+  return memoryDeviceId;
 }

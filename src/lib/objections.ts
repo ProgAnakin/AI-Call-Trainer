@@ -1,6 +1,7 @@
 import type { Language, ModelObjection, Product, UiLanguage } from '@/types';
 import { langFamilyOf, wordCount } from './metrics';
 import { DRILL_LENGTH, DRILL_SUBSTANCE_WORDS } from './thresholds';
+import * as safeStorage from './safeStorage';
 
 /**
  * Pontuação de resposta a objeção — 100% client-side (custo zero, feedback
@@ -114,12 +115,7 @@ type RawHistory = Record<string, Record<string, { n: number; sum: number }>>;
 const HISTORY_KEY = 'act.drill.history';
 
 function readHistory(): RawHistory {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    return raw ? (JSON.parse(raw) as RawHistory) : {};
-  } catch {
-    return {};
-  }
+  return safeStorage.getJson<RawHistory>(HISTORY_KEY, {});
 }
 
 /**
@@ -143,16 +139,13 @@ export function recordObjectionResult(
   baseObjection: string,
   score: number,
 ): void {
-  try {
-    const history = readHistory();
-    const perProduct = history[productId] ?? (history[productId] = {});
-    const entry = perProduct[baseObjection] ?? (perProduct[baseObjection] = { n: 0, sum: 0 });
-    entry.n += 1;
-    entry.sum += score;
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  } catch {
-    // localStorage indisponível: o drill funciona, só não adapta.
-  }
+  const history = readHistory();
+  const perProduct = history[productId] ?? (history[productId] = {});
+  const entry = perProduct[baseObjection] ?? (perProduct[baseObjection] = { n: 0, sum: 0 });
+  entry.n += 1;
+  entry.sum += score;
+  // Storage indisponível: o drill funciona, só não adapta.
+  safeStorage.setJson(HISTORY_KEY, history);
 }
 
 /**
@@ -213,27 +206,19 @@ export function buildGauntlet(
 
 const BEST_KEY = 'act.drill.best';
 
+type BestMap = Record<string, number>;
+
 export function getDrillBest(productId: string): number | null {
-  try {
-    const raw = localStorage.getItem(BEST_KEY);
-    const map = raw ? (JSON.parse(raw) as Record<string, number>) : {};
-    return typeof map[productId] === 'number' ? map[productId] : null;
-  } catch {
-    return null;
-  }
+  const map = safeStorage.getJson<BestMap>(BEST_KEY, {});
+  return typeof map[productId] === 'number' ? map[productId] : null;
 }
 
 /** Salva se for recorde. Retorna true se bateu o recorde. */
 export function saveDrillBest(productId: string, avg: number): boolean {
-  try {
-    const raw = localStorage.getItem(BEST_KEY);
-    const map = raw ? (JSON.parse(raw) as Record<string, number>) : {};
-    const prev = map[productId];
-    if (typeof prev === 'number' && prev >= avg) return false;
-    map[productId] = avg;
-    localStorage.setItem(BEST_KEY, JSON.stringify(map));
-    return prev !== undefined;
-  } catch {
-    return false;
-  }
+  const map = safeStorage.getJson<BestMap>(BEST_KEY, {});
+  const prev = map[productId];
+  if (typeof prev === 'number' && prev >= avg) return false;
+  map[productId] = avg;
+  safeStorage.setJson(BEST_KEY, map);
+  return prev !== undefined;
 }
