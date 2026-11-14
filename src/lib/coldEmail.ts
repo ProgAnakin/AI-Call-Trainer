@@ -1,4 +1,5 @@
 import type { UiLanguage } from '@/types';
+import * as safeStorage from './safeStorage';
 
 /**
  * Cold Email Analyzer — heurística determinística, sem custo de API (mesma
@@ -145,22 +146,14 @@ export function analyzeEmail(input: EmailInput): EmailAnalysis {
 const BEST_KEY = 'act.email.best';
 
 export function getEmailBest(): number | null {
-  try {
-    const raw = localStorage.getItem(BEST_KEY);
-    return raw !== null && !Number.isNaN(Number(raw)) ? Number(raw) : null;
-  } catch {
-    return null;
-  }
+  const raw = safeStorage.getItem(BEST_KEY);
+  return raw !== null && raw !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : null;
 }
 
 /** Salva se for recorde. Retorna true se bateu um recorde anterior. */
 export function saveEmailBest(score: number): boolean {
-  try {
-    const prev = getEmailBest();
-    if (prev !== null && prev >= score) return false;
-    localStorage.setItem(BEST_KEY, String(score));
-    return prev !== null;
-  } catch {
-    return false;
-  }
+  const prev = getEmailBest();
+  if (prev !== null && prev >= score) return false;
+  safeStorage.setItem(BEST_KEY, String(score));
+  return prev !== null;
 }

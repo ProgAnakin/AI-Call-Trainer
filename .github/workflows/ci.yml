@@ -28,3 +28,14 @@ jobs:
 
       - name: Typecheck + production build
         run: npm run build
+
+      # Playwright fica fora do package.json (traz ~150 MB de navegador), então
+      # é instalado só aqui, sem gravar na árvore de dependências. Versão presa
+      # para o CI não quebrar sozinho num release novo.
+      - name: Install Playwright (Chromium)
+        run: |
+          npm install --no-save playwright@1.63.0
+          npx playwright install --with-deps chromium
+
+      - name: End-to-end checks
+        run: npm run test:e2e

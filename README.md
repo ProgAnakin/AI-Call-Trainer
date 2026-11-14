@@ -199,7 +199,7 @@ so you can train on *your* product, not the demo one. Each product shows its **b
 | LLM | Claude API (`claude-haiku-4-5` by default) | The prospect and the coach; the only paid piece |
 | Backend | Supabase (Postgres + Edge Functions) | Free tier; the Edge Function is what protects the API key |
 | Hosting | Vercel | Free tier, deploys on push, HTTPS (required for the mic) |
-| Tests | Vitest | Unit tests for the metric and scoring logic |
+| Tests | Vitest + Playwright | 166 unit tests for scoring and storage logic; 12 end-to-end browser checks |
 
 ---
 
@@ -257,6 +257,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # unit tests
 npm run build      # typecheck + production bundle
+npm run test:e2e   # end-to-end checks (needs the build; see Testing)
 ```
 
 With nothing configured, the app runs in **demo mode**: the prospect and the evaluator are
@@ -475,14 +476,31 @@ the migration, it needs two one-time settings in the Supabase dashboard:
 ## Testing
 
 ```bash
-npm test           # Vitest, unit tests
+npm test           # Vitest — 166 unit tests
 npm run build      # tsc --build + vite build
+npm run test:e2e   # 12 browser checks against the production build
 ```
 
-Coverage focuses on the logic that must not silently drift: conversation metrics, question
+**Unit tests** cover the logic that must not silently drift: conversation metrics, question
 classification, filler detection, next-step detection, streak calculation, framework
-weighting, objection scoring and CSV escaping. CI runs tests, typecheck and build on every
-push.
+weighting, objection scoring, CSV escaping, storage resilience (blocked storage, exceeded
+quota, history pruning), seed catalog integrity (a mistyped `persona_id` would otherwise
+only surface as a dead scenario card) and translation parity across the three languages.
+
+**End-to-end checks** drive a real browser over the production bundle: the full loop
+(scenario → briefing → call → scorecard), the objection gauntlet, the Cold Email Lab,
+language switching, the 404 route, and two regressions worth keeping nailed down — the app
+booting with `localStorage` denied (Safari Private Browsing, Brave shields) and a failed
+route chunk landing on the error boundary instead of a blank page.
+
+Playwright is deliberately not a dependency (it pulls ~150 MB of browser). The script
+resolves it locally or globally and skips with instructions if it is missing:
+
+```bash
+npm i -D playwright && npx playwright install chromium
+```
+
+CI runs unit tests, typecheck, build and the end-to-end checks on every push.
 
 ---
 

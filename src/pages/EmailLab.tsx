@@ -7,7 +7,7 @@ import {
   saveEmailBest,
   type EmailAnalysis,
 } from '@/lib/coldEmail';
-import { Badge, Button, Card, Input, Textarea } from '@/components/ui';
+import { Badge, Button, Card, Field, Input, Textarea } from '@/components/ui';
 import { ScoreReveal } from '@/components/scorecard/ScoreReveal';
 import { useT, type TKey } from '@/i18n';
 
@@ -55,23 +55,22 @@ export function EmailLab() {
       <p className="mb-6 mt-1 text-sm text-slate-400">{t('email.subtitle')}</p>
 
       <Card className="space-y-4">
-        <div>
-          <p className="mb-1 text-xs font-medium text-slate-400">{t('email.subjectLabel')}</p>
+        {/* Field, não <p> + input: um parágrafo não rotula campo nenhum. */}
+        <Field label={t('email.subjectLabel')}>
           <Input
             value={subject}
             placeholder={t('email.subjectPlaceholder')}
             onChange={(e) => setSubject(e.target.value)}
           />
-        </div>
-        <div>
-          <p className="mb-1 text-xs font-medium text-slate-400">{t('email.bodyLabel')}</p>
+        </Field>
+        <Field label={t('email.bodyLabel')}>
           <Textarea
             rows={9}
             value={body}
             placeholder={t('email.bodyPlaceholder')}
             onChange={(e) => setBody(e.target.value)}
           />
-        </div>
+        </Field>
         <div className="flex items-center justify-between">
           <p className="text-xs text-slate-500">
             {best !== null ? t('email.best', { n: best }) : t('email.noBest')}

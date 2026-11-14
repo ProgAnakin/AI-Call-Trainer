@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { UiLanguage } from '@/types';
+import * as safeStorage from '@/lib/safeStorage';
 import { pt } from './pt';
 import { it } from './it';
 import { en } from './en';
@@ -20,7 +21,9 @@ const Ctx = createContext<I18nCtx | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<UiLanguage>(() => {
-    const saved = localStorage.getItem(LS_KEY) as UiLanguage | null;
+    // Via safeStorage: um acesso cru aqui lança com dados de site bloqueados
+    // (Brave/Safari privado) e, num inicializador de estado, impede o app de arrancar.
+    const saved = safeStorage.getItem(LS_KEY) as UiLanguage | null;
     return saved && saved in DICTS ? saved : 'en';
   });
 
@@ -33,7 +36,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     () => ({
       lang,
       setLang: (l) => {
-        localStorage.setItem(LS_KEY, l);
+        safeStorage.setItem(LS_KEY, l);
         setLangState(l);
       },
       t: (key, vars) => {

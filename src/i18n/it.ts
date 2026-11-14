@@ -312,6 +312,7 @@ export const it: typeof pt = {
 
   // Accessibilità
   'a11y.skip': 'Salta al contenuto',
+  'a11y.langGroup': 'Lingua dell’interfaccia',
 
   // Legal
   'legal.title': 'Privacy & Termini',
@@ -362,4 +363,9 @@ export const it: typeof pt = {
   'email.tip.subject': 'Oggetto debole — usa qualcosa di breve (< 60 caratteri) e specifico, non pubblicitario.',
   'email.tip.exclaim': 'Meno punti esclamativi — sembra disperato. Massimo uno.',
   'email.tip.solid': 'Solido! Breve, centrato sul cliente e con un passo successivo chiaro.',
+
+  // 404
+  'notFound.title': 'Pagina non trovata',
+  'notFound.body': 'Questo indirizzo non esiste. Lo scenario potrebbe essere stato eliminato, o il link è sbagliato.',
+  'notFound.home': 'Torna alla home',
 };

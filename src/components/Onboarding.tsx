@@ -2,15 +2,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui';
 import { useT } from '@/i18n';
+import * as safeStorage from '@/lib/safeStorage';
 
 const SEEN_KEY = 'act.onboarded';
 
 function hasOnboarded(): boolean {
-  try {
-    return localStorage.getItem(SEEN_KEY) === '1';
-  } catch {
-    return true; // storage bloqueado: não insista com o overlay
-  }
+  // Storage bloqueado: trata como já visto, senão o overlay voltaria a cada visita.
+  if (!safeStorage.isAvailable()) return true;
+  return safeStorage.getItem(SEEN_KEY) === '1';
 }
 
 /**
@@ -24,11 +23,7 @@ export function Onboarding() {
   if (!open) return null;
 
   const dismiss = () => {
-    try {
-      localStorage.setItem(SEEN_KEY, '1');
-    } catch {
-      // ignora storage bloqueado
-    }
+    safeStorage.setItem(SEEN_KEY, '1');
     setOpen(false);
   };
 
