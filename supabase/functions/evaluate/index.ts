@@ -51,6 +51,14 @@ const FEEDBACK_LANGUAGE: Record<'pt' | 'it' | 'en', string> = {
   en: 'inglês',
 };
 
+/** Nome legível do tipo de call — antes o enum cru entrava no prompt. */
+const CALL_TYPE_LABEL: Record<string, string> = {
+  cold_call: 'cold call',
+  discovery: 'call de descoberta',
+  demo: 'demonstração',
+  negotiation: 'negociação',
+};
+
 function criteriaOf(framework: Body['framework']): string[] {
   return Object.keys(WEIGHTS[framework] ?? WEIGHTS.basic);
 }
@@ -80,7 +88,7 @@ function buildPrompt(body: Body): string {
     .join(',\n');
 
   return `Você é um coach de vendas sênior. Avalie a performance do REP neste transcript
-de ${body.call_type} usando o framework ${body.framework}.
+de ${CALL_TYPE_LABEL[body.call_type] ?? body.call_type} usando o framework ${body.framework}.
 Os pesos de cada critério estão anotados no formato abaixo.
 Critério de sucesso da call: ${body.success_criteria}.
 Escreva TODO o feedback em ${FEEDBACK_LANGUAGE[body.ui_language ?? 'en']}, mesmo que a call

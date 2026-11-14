@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Language, UiLanguage } from '@/types';
+import type { CallType, Language, UiLanguage } from '@/types';
 import { SEED_PERSONAS } from './personas';
 import { SEED_PRODUCTS } from './products';
 import { SEED_SCENARIOS } from './scenarios';
@@ -13,6 +13,7 @@ import { SEED_SCENARIOS } from './scenarios';
  */
 
 const LANGUAGES: Language[] = ['pt-BR', 'pt-PT', 'it-IT', 'en-US'];
+const CALL_TYPES: CallType[] = ['cold_call', 'discovery', 'demo', 'negotiation'];
 /** Idiomas de UI que o drill precisa ter traduzidos (en é o texto base). */
 const TRANSLATED: UiLanguage[] = ['pt', 'it'];
 
@@ -42,6 +43,17 @@ describe('integridade referencial do seed', () => {
       expect(
         SEED_SCENARIOS.some((s) => s.language === lang),
         `nenhum cenário em ${lang}`,
+      ).toBe(true);
+    }
+  });
+
+  it('tem conteúdo para todo tipo de call declarado', () => {
+    // `negotiation` já existiu como tipo órfão: tinha rótulo traduzido e opção
+    // na Biblioteca, mas nenhum cenário — logo, nada para treinar.
+    for (const type of CALL_TYPES) {
+      expect(
+        SEED_SCENARIOS.some((s) => s.call_type === type),
+        `nenhum cenário do tipo ${type}`,
       ).toBe(true);
     }
   });

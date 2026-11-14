@@ -196,6 +196,15 @@ async function main() {
     if ((await starts.count()) < 3) throw new Error('menos de 3 cenários na home');
   });
 
+  await check('home oferece os quatro tipos de call', async (page) => {
+    // `negotiation` já foi um tipo órfão: rótulo traduzido, opção na
+    // Biblioteca e nenhum cenário para treinar.
+    await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
+    for (const label of ['Cold call', 'Discovery', 'Demo', 'Negotiation']) {
+      await expectVisible(page.getByText(label, { exact: true }), `cenário do tipo "${label}"`);
+    }
+  });
+
   await check('onboarding aparece na primeira visita e não volta', async (page) => {
     await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
     await expectVisible(page.getByText(/Welcome to AI Call Trainer/i), 'overlay de onboarding');

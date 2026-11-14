@@ -80,14 +80,49 @@ function moodHint(language: string, mood?: string): string {
   return hint ? `\n${hint}` : '';
 }
 
+/**
+ * Enquadramento da situação por tipo de call.
+ *
+ * Antes o prompt interpolava o enum cru — "você recebeu uma negotiation de um
+ * SDR" — que além de agramatical não dizia nada ao modelo sobre a situação.
+ * Uma negociação não é uma cold call: o interlocutor já conhece a solução e o
+ * que está em jogo é preço e condições. Sem isto, todo tipo de call era
+ * interpretado como uma ligação fria.
+ */
+const CALL_TYPE_FRAMING: Record<string, (p: string) => string> = {
+  cold_call: (p) =>
+    `Você recebeu uma cold call inesperada de um SDR vendendo ${p}. Você não pediu este contato e não conhece a empresa dele.`,
+  discovery: (p) =>
+    `Você aceitou uma call de descoberta sobre ${p}. Existe interesse inicial, mas nada decidido: espere perguntas e avalie por conta se vale seguir.`,
+  demo: (p) =>
+    `Você está numa demonstração de ${p}, que já conhece por cima. Cobre prova prática no SEU contexto e questione tudo que soar genérico ou de catálogo.`,
+  negotiation: (p) =>
+    `Você está negociando a compra de ${p}. A solução já foi avaliada e aprovada tecnicamente — o que falta é preço, prazo e condições. Pressione por desconto, cobre justificativa de retorno e não aceite o primeiro número.`,
+};
+
+function framingFor(callType: string, product: Product): string {
+  const build = CALL_TYPE_FRAMING[callType] ?? CALL_TYPE_FRAMING.cold_call;
+  return build(`${product.name} (${product.one_liner})`);
+}
+
+/**
+ * Em demo e negociação o estágio é a situação da call, não o da persona —
+ * senão o prompt se contradiz (uma CFO "cold" negociando condições).
+ */
+function buyingStageFor(persona: Persona, callType: string): string {
+  if (callType === 'negotiation') return 'decidindo — já avaliou e está fechando condições';
+  if (callType === 'demo') return 'evaluating';
+  return persona.buying_stage;
+}
+
 function buildSystemPrompt(persona: Persona, product: Product, scenario: Scenario, mood?: string): string {
   const p = persona.personality;
   return `Você é ${persona.name}, ${persona.role} em ${persona.company_profile}.
 Personalidade: ceticismo ${p.skepticism}/5, paciência ${p.patience}/5, fala ${p.talkativeness}/5.
-Você recebeu uma ${scenario.call_type === 'cold_call' ? 'cold call' : scenario.call_type} de um SDR vendendo ${product.name} (${product.one_liner}).
+${framingFor(scenario.call_type, product)}
 Suas dores reais (não revele de graça): ${persona.pain_points.join('; ')}.
 Objeções que você levanta naturalmente: ${persona.hidden_objections.join('; ')}.
-Estágio de compra: ${persona.buying_stage}.${moodHint(scenario.language, mood)}
+Estágio de compra: ${buyingStageFor(persona, scenario.call_type)}.${moodHint(scenario.language, mood)}
 
 REGRAS:
 - Responda SEMPRE em ${scenario.language}, em falas curtas (1-3 frases), como numa ligação real.
