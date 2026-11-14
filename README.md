@@ -280,11 +280,16 @@ deploys one function at a time and doesn't resolve shared imports).
 ### Option B — Supabase CLI
 
 ```bash
-supabase db push                                   # or paste supabase/migrations/0001_init.sql
+supabase db push                                   # applies every migration, 0003 included
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+supabase secrets set ALLOWED_ORIGINS=https://your-app.vercel.app
 supabase functions deploy roleplay
 supabase functions deploy evaluate
 ```
+
+> Pasting SQL by hand instead? Run all three migrations in order. `0003` is the
+> one that drops the permissive policies `0001` ships with — skip it and three
+> tables stay writable by anyone holding the public anon key.
 
 Then copy `.env.example` to `.env` and fill in `VITE_SUPABASE_URL` and
 `VITE_SUPABASE_ANON_KEY` (both from **Project Settings → API**; use the `anon` / public
@@ -350,7 +355,7 @@ public/                  # PWA manifest, service worker, app icon
 supabase/
 ├── functions/           # roleplay, evaluate, _shared (CLI deploys)
 ├── dashboard-deploy/    # same functions, single-file, for the web dashboard
-└── migrations/          # 0001 schema+RLS+seed, 0002 user_backups (sync)
+└── migrations/          # 0001 schema+RLS+seed, 0002 user_backups (sync), 0003 lockdown
 ```
 
 ### Call state machine

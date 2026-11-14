@@ -51,6 +51,15 @@ The simplest way (no terminal): from the dashboard.
    paste it into the editor and click **Run**.
 3. Repeat with `supabase/migrations/0002_user_backups.sql` (only needed if you
    want cross-device sync; running it anyway does no harm).
+4. Repeat with `supabase/migrations/0003_lock_down_session_tables.sql`. **Do not
+   skip this one.** `0001` ships permissive policies that leave three tables
+   readable *and writable* by anyone holding the public anon key — which is in
+   the site's JavaScript, so that means anyone at all. `0003` drops them. The app
+   does not write to those tables (your history lives in the browser), so nothing
+   breaks.
+
+> Run all three in order. If you already ran `0001` on an existing project, you
+> can run `0003` on its own at any time.
 
 ## Step 3 — Get the Anthropic key + set a spend cap (~3 min)
 
@@ -81,6 +90,18 @@ supabase secrets set ANTHROPIC_API_KEY=sk-ant-paste-your-key-here
 supabase functions deploy roleplay
 supabase functions deploy evaluate
 ```
+
+Once you know the site's address (Step 5), come back and lock the functions to
+it, so nobody else's page can spend your credit:
+
+```bash
+supabase secrets set ALLOWED_ORIGINS=https://your-app.vercel.app
+supabase functions deploy roleplay   # redeploy to pick the secret up
+supabase functions deploy evaluate
+```
+
+> Until you set this, any `*.vercel.app` address is accepted. `localhost` always
+> works, so local development keeps running either way.
 
 > `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by
 > Supabase into the functions — you do **not** need to set those.
