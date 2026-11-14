@@ -96,4 +96,37 @@ export const SEED_SCENARIOS: Scenario[] = [
     success_criteria:
       'Demonstrate the value for repetitive tickets, handle the budget objection, and define next steps with the COO.',
   },
+  {
+    id: '00000000-0000-4000-8000-000000000309',
+    persona_id: '00000000-0000-4000-8000-000000000202', // Paulo, Head of Sales
+    product_id: '00000000-0000-4000-8000-000000000101', // Sales Cloud
+    call_type: 'demo',
+    difficulty: 3,
+    language: 'pt-BR',
+    time_limit_seconds: TIME_LIMITS.demo,
+    success_criteria:
+      'Tie every screen you show to a pain Paulo already admitted, avoid the feature tour, and agree on a pilot with a date.',
+  },
+  {
+    id: '00000000-0000-4000-8000-00000000030a',
+    persona_id: '00000000-0000-4000-8000-000000000201', // Marta, CFO
+    product_id: '00000000-0000-4000-8000-000000000101', // Sales Cloud
+    call_type: 'negotiation',
+    difficulty: 4,
+    language: 'pt-BR',
+    time_limit_seconds: TIME_LIMITS.negotiation,
+    success_criteria:
+      'Hold the price by defending the return, trade any discount for something in exchange (term, seats, case study), and leave with agreed terms.',
+  },
+  {
+    id: '00000000-0000-4000-8000-00000000030b',
+    persona_id: '00000000-0000-4000-8000-000000000205', // Ana, IT Director
+    product_id: '00000000-0000-4000-8000-000000000102', // Agentforce
+    call_type: 'negotiation',
+    difficulty: 5,
+    language: 'en-US',
+    time_limit_seconds: TIME_LIMITS.negotiation,
+    success_criteria:
+      'Survive procurement pressure on terms and security, concede nothing without a trade, and pin down the signature path and date.',
+  },
 ];

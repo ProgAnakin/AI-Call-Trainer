@@ -94,7 +94,10 @@ The prospect never knows it's being graded, which is what keeps the roleplay hon
 
 <p align="center"><img src="docs/screenshots/briefing.png" alt="Pre-call briefing with the battle card open" width="720"></p>
 
-- **Scenario cards** — persona × product × call type × difficulty × language.
+- **Scenario cards** — persona × product × call type × difficulty × language. Four call
+  types, each with its own framing: a cold call lands unannounced, a discovery is a
+  conversation you agreed to, a demo demands proof in your own context, and a negotiation
+  starts after the technical approval and pushes on price and terms.
 - **Pre-call briefing** — who picks up, their personality bars, their **mood**, what you're
   selling, your objective, and the time limit.
 - **Battle card** — a collapsible product playbook (value props, objection→answer,
@@ -199,7 +202,7 @@ so you can train on *your* product, not the demo one. Each product shows its **b
 | LLM | Claude API (`claude-haiku-4-5` by default) | The prospect and the coach; the only paid piece |
 | Backend | Supabase (Postgres + Edge Functions) | Free tier; the Edge Function is what protects the API key |
 | Hosting | Vercel | Free tier, deploys on push, HTTPS (required for the mic) |
-| Tests | Vitest + Playwright | 166 unit tests for scoring and storage logic; 12 end-to-end browser checks |
+| Tests | Vitest + Playwright | 176 unit tests for scoring and storage logic; 13 end-to-end browser checks |
 
 ---
 
@@ -319,7 +322,7 @@ src/
 │   ├── Onboarding.tsx   # first-visit intro
 │   └── ui.tsx           # Button, Card, Badge, Input, Select, Textarea
 ├── data/
-│   ├── seed/            # 4 Salesforce products, 6 personas, 8 scenarios
+│   ├── seed/            # 4 Salesforce products, 6 personas, 11 scenarios
 │   ├── frameworks.ts    # criteria and weights: basic / SPICED / MEDDIC
 │   └── legal.ts         # trilingual privacy + terms content
 ├── hooks/
@@ -476,9 +479,9 @@ the migration, it needs two one-time settings in the Supabase dashboard:
 ## Testing
 
 ```bash
-npm test           # Vitest — 166 unit tests
+npm test           # Vitest — 176 unit tests
 npm run build      # tsc --build + vite build
-npm run test:e2e   # 12 browser checks against the production build
+npm run test:e2e   # 13 browser checks against the production build
 ```
 
 **Unit tests** cover the logic that must not silently drift: conversation metrics, question
@@ -518,10 +521,15 @@ CI runs unit tests, typecheck, build and the end-to-end checks on every push.
 - [x] **Phase 6 — Engagement & polish.** Gamification (levels, XP, achievements), adaptive
       next-step coach, skill matrix, battle cards, route code-splitting, installable PWA
       with offline shell, WCAG pass, and Privacy/Terms pages.
-- [ ] Premium TTS (ElevenLabs / OpenAI) for a less robotic prospect
-- [ ] Server-side speech-to-text so voice works in any browser (incl. Brave)
+- [x] **Phase 7 — Hardening & AE modes.** Storage that survives denied access and a full
+      quota, an error boundary and a 404 route instead of blank pages, labels actually
+      associated with their inputs, demo and negotiation calls with their own situation
+      framing and scenarios, and an end-to-end suite run in CI.
+- [ ] Premium TTS (ElevenLabs / OpenAI) for a less robotic prospect — paid per character,
+      so it breaks the free constraint
+- [ ] Server-side speech-to-text so voice works in any browser (incl. Brave) — paid per
+      minute, same trade-off
 - [ ] Generate a product card from a URL, so a stranger can train on their own product
-- [ ] AE modes: guided demo and procurement negotiation
 
 ---
 
