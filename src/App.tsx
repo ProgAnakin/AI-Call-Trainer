@@ -49,29 +49,32 @@ function Nav() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-800 bg-surface/90 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-6">
-          <Link to="/" className="text-sm font-bold tracking-tight">
-            🎙️ AI Call Trainer
-          </Link>
-          <nav className="flex gap-1">
-            {links.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                end={l.to === '/'}
-                className={({ isActive }) =>
-                  clsx(
-                    'rounded-lg px-3 py-1.5 text-sm transition-colors',
-                    isActive ? 'bg-surface-overlay text-white' : 'text-slate-400 hover:text-slate-200',
-                  )
-                }
-              >
-                {l.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
+      {/* Três filhos diretos com flex-wrap. Antes, logo + 5 links + idioma ficavam
+          numa linha única que não quebrava: a 375px a página inteira rolava para o
+          lado (554px em inglês, 601px em italiano). Agora, em telas estreitas, a
+          navegação desce para uma segunda linha (order-last + w-full) e rola só
+          ela, se precisar; de sm para cima o layout é o mesmo de antes. */}
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3">
+        <Link to="/" className="text-sm font-bold tracking-tight">
+          🎙️ AI Call Trainer
+        </Link>
+        <nav className="order-last flex w-full gap-1 overflow-x-auto [scrollbar-width:none] sm:order-none sm:w-auto sm:flex-1">
+          {links.map((l) => (
+            <NavLink
+              key={l.to}
+              to={l.to}
+              end={l.to === '/'}
+              className={({ isActive }) =>
+                clsx(
+                  'shrink-0 whitespace-nowrap rounded-lg px-2 py-1.5 text-sm transition-colors sm:px-3',
+                  isActive ? 'bg-surface-overlay text-white' : 'text-slate-400 hover:text-slate-200',
+                )
+              }
+            >
+              {l.label}
+            </NavLink>
+          ))}
+        </nav>
         <div className="flex items-center gap-3">
           {isDemoMode() && (
             <span
@@ -128,7 +131,7 @@ function NotFound() {
       <p className="mt-2 text-sm text-slate-400">{t('notFound.body')}</p>
       <Link
         to="/"
-        className="mt-6 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-soft"
+        className="mt-6 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
       >
         {t('notFound.home')}
       </Link>

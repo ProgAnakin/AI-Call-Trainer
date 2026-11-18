@@ -71,7 +71,7 @@ export const PushToTalk = forwardRef<HTMLButtonElement, Props>(function PushToTa
           'relative flex h-20 w-20 touch-none select-none items-center justify-center rounded-full text-3xl transition-all focus:outline-none focus:ring-4 focus:ring-accent/40',
           listening
             ? 'scale-110 bg-red-500 shadow-xl shadow-red-500/40'
-            : 'bg-accent shadow-xl shadow-accent/30 hover:bg-accent-soft',
+            : 'bg-accent shadow-xl shadow-accent/30 hover:bg-accent-hover',
           disabled && 'cursor-not-allowed opacity-50',
         )}
         aria-pressed={listening}

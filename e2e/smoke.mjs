@@ -18,6 +18,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import process from 'node:process';
 
@@ -53,6 +54,20 @@ if (!playwright) {
   process.exit(0);
 }
 const { chromium } = playwright;
+
+/**
+ * axe-core, também opcional e resolvido do mesmo jeito. Sem ele a verificação
+ * de acessibilidade é pulada (com aviso) em vez de falhar a suíte.
+ */
+function loadAxeSource() {
+  try {
+    const require = createRequire(import.meta.url);
+    return readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+  } catch {
+    return null;
+  }
+}
+const AXE_SOURCE = loadAxeSource();
 
 // ---------- servidor ----------
 
@@ -99,8 +114,8 @@ let browser;
  * Por padrão pré-marca onboarding como visto e idioma como inglês, para os
  * testes não dependerem do overlay de primeira visita nem do idioma salvo.
  */
-async function check(name, fn, { seed = true, collectErrors = true } = {}) {
-  const context = await browser.newContext();
+async function check(name, fn, { seed = true, collectErrors = true, viewport } = {}) {
+  const context = await browser.newContext(viewport ? { viewport, hasTouch: viewport.width < 600 } : {});
   const page = await context.newPage();
   const consoleErrors = [];
 
@@ -326,6 +341,111 @@ async function main() {
     await expectVisible(page.getByRole('button', { name: /Reload/i }), 'botão de recarregar');
     await expectVisible(page.getByRole('link', { name: /^Scenarios$/ }), 'navegação preservada');
   }, { collectErrors: false }); // o chunk abortado loga erro de rede, é o esperado
+
+  // ---- Celular e acessibilidade ----
+
+  /**
+   * Em 375px o cabeçalho (logo + 5 links + idiomas, numa linha que não quebrava)
+   * fazia TODAS as páginas rolarem para o lado: 554px em inglês, 601px em
+   * italiano. 320px cobre os celulares pequenos. O texto em italiano é o mais
+   * longo dos três idiomas, então é o pior caso para o layout.
+   */
+  for (const width of [375, 320]) {
+    await check(`MOBILE: sem overflow horizontal em ${width}px (EN e IT)`, async (page) => {
+      const routes = ['/', '/drill', '/email', '/progress', '/library', '/legal', '/rota-invalida'];
+      for (const lang of ['en', 'it']) {
+        // Grava o idioma uma vez por rodada; as navegações seguintes o leem.
+        await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
+        await page.evaluate((l) => localStorage.setItem('act.ui_lang', l), lang);
+        for (const route of routes) {
+          await page.goto(`${BASE_URL}${route}`, { waitUntil: 'networkidle' });
+          await page.waitForTimeout(250);
+          const { sw, iw } = await page.evaluate(() => ({
+            sw: document.documentElement.scrollWidth,
+            iw: window.innerWidth,
+          }));
+          if (sw > iw) throw new Error(`${route} (${lang}) mede ${sw}px numa tela de ${iw}px`);
+        }
+      }
+    }, { viewport: { width, height: 700 } });
+  }
+
+  if (!AXE_SOURCE) {
+    console.log('  - A11Y: pulado (axe-core não encontrado) — npm i -D axe-core');
+  } else {
+    /**
+     * WCAG 2.1 A/AA com axe-core. O README afirmava conformidade, mas uma
+     * auditoria real achou 120 elementos de baixo contraste, um <select> sem nome
+     * e um input de edição da transcrição totalmente anônimo.
+     */
+    const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+    /**
+     * Repete até estabilizar, em vez de medir uma vez.
+     *
+     * O scorecard tem animação de entrada: medido a 400ms, o axe via 28 falhas de
+     * contraste (cores semitransparentes no meio do fade-in); a partir de 1s, zero.
+     * Isso é falso positivo de timing, não defeito. Passa assim que uma medição
+     * vier limpa e só falha se a violação PERSISTIR por 3s — o que ainda pega
+     * contraste real, que não some sozinho.
+     */
+    const audit = async (page, where, settleMs = 3000) => {
+      await page.evaluate(AXE_SOURCE);
+      const deadline = Date.now() + settleMs;
+      let violations;
+      do {
+        await page.waitForTimeout(350);
+        ({ violations } = await page.evaluate(
+          (tags) => axe.run(document, { runOnly: { type: 'tag', values: tags } }),
+          AXE_TAGS,
+        ));
+        if (violations.length === 0) return;
+      } while (Date.now() < deadline);
+
+      const lines = violations.map(
+        (v) => `${v.id} ×${v.nodes.length} (${v.impact}) em ${where}: ${v.nodes[0].html.slice(0, 90)}`,
+      );
+      throw new Error(lines.join('\n       '));
+    };
+
+    await check('A11Y: páginas estáticas sem violações WCAG 2.1 AA', async (page) => {
+      for (const route of ['/', '/drill', '/email', '/progress', '/library', '/legal', '/rota-invalida']) {
+        await page.goto(`${BASE_URL}${route}`, { waitUntil: 'networkidle' });
+        await audit(page, route);
+      }
+    });
+
+    await check('A11Y: onboarding sem violações', async (page) => {
+      await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
+      await audit(page, 'onboarding');
+    }, { seed: false });
+
+    await check('A11Y: call, scorecard e progresso sem violações', async (page) => {
+      await runCallToScorecard(page);
+      await audit(page, 'scorecard');
+      await page.goto(`${BASE_URL}/progress`, { waitUntil: 'networkidle' });
+      await audit(page, 'progress com dados');
+    });
+
+    await check('A11Y: drill e email lab em uso, sem violações', async (page) => {
+      await page.goto(`${BASE_URL}/drill`, { waitUntil: 'networkidle' });
+      await page.getByRole('button', { name: /Start the gauntlet/i }).click();
+      await page.getByPlaceholder(/Answer as if/i).fill(
+        'I understand. What would you need to see to justify it? Most teams recover the cost in a quarter.',
+      );
+      await audit(page, 'drill: pergunta');
+      await page.getByRole('button', { name: /^Respond$/ }).click();
+      await expectVisible(page.getByText(/Model answer/i), 'resposta modelo');
+      await audit(page, 'drill: feedback');
+
+      await page.goto(`${BASE_URL}/email`, { waitUntil: 'networkidle' });
+      await page.getByLabel(/Subject/i).fill('Quick question about onboarding');
+      await page.getByLabel(/Email body/i).fill(
+        'Noticed your team hired four reps. How are you handling onboarding today? Worth 15 minutes Thursday?',
+      );
+      await page.getByRole('button', { name: /Analyze/i }).click();
+      await audit(page, 'email: resultado');
+    });
+  }
 
   await check('PWA: manifest e service worker servidos', async (page) => {
     for (const path of ['/manifest.webmanifest', '/sw.js']) {

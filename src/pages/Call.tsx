@@ -416,6 +416,9 @@ export function Call() {
               <p className="text-xs text-slate-500">{t('call.editHint')}</p>
               <div className="flex gap-2">
                 <Input
+                  // Sem rótulo nem placeholder: era um campo totalmente anônimo
+                  // para leitor de tela.
+                  aria-label={t('call.editHint')}
                   value={pendingVoiceText}
                   onChange={(e) => setPendingVoiceText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && void confirmVoiceText()}
@@ -471,6 +474,7 @@ export function Call() {
                 ref={inputRef}
                 value={draft}
                 disabled={busy}
+                aria-label={t('call.typePlaceholder')}
                 placeholder={t('call.typePlaceholder')}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && void handleTextSubmit()}

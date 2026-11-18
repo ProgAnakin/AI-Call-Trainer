@@ -38,7 +38,14 @@ export function TranscriptLive({ turns, personaName, interim, thinking }: Props)
                 : 'rounded-bl-md bg-surface-overlay text-slate-100',
             )}
           >
-            <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider opacity-60">
+            {/* Opacidade só no prospect: aplicada sobre o índigo da bolha do
+                usuário, derrubava o contraste para 2.8:1. */}
+            <p
+              className={clsx(
+                'mb-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                turn.speaker !== 'rep' && 'opacity-60',
+              )}
+            >
               {turn.speaker === 'rep' ? t('call.you') : personaName}
             </p>
             {turn.content}

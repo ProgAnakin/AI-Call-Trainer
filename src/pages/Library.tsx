@@ -52,7 +52,8 @@ export function Library() {
       <h1 className="text-2xl font-bold">{t('library.title')}</h1>
       <p className="mb-6 mt-1 text-sm text-slate-400">{t('library.subtitle')}</p>
 
-      <div className="mb-6 flex items-center justify-between">
+      {/* flex-wrap: abas + botão "novo" numa linha só estouravam os 375px de um celular. */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1 rounded-xl bg-surface-raised p-1">
           {tabs.map((tb) => (
             <button

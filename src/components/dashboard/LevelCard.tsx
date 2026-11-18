@@ -17,9 +17,7 @@ export function LevelCard({ gam }: { gam: Gamification }) {
           aria-hidden
         >
           <div className="flex h-[52px] w-[52px] flex-col items-center justify-center rounded-full bg-surface text-accent-soft">
-            <span className="text-[8px] font-semibold uppercase tracking-wider opacity-70">
-              {t('gam.lvl')}
-            </span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider">{t('gam.lvl')}</span>
             <span className="font-mono text-2xl font-bold leading-none">{level.level}</span>
           </div>
         </div>
@@ -40,6 +38,7 @@ export function LevelCard({ gam }: { gam: Gamification }) {
           <div
             className="h-2 overflow-hidden rounded-full bg-slate-800"
             role="progressbar"
+            aria-label={t('gam.progressLabel')}
             aria-valuenow={Math.round(level.progress * 100)}
             aria-valuemin={0}
             aria-valuemax={100}

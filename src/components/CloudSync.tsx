@@ -139,6 +139,8 @@ export function CloudSync() {
               <Input
                 type="email"
                 value={email}
+                // O placeholder ("you@email.com") é um exemplo, não um nome.
+                aria-label={t('sync.emailLabel')}
                 placeholder={t('sync.emailPlaceholder')}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && void send()}

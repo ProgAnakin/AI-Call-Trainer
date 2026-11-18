@@ -14,7 +14,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const buttonVariants: Record<ButtonVariant, string> = {
   primary:
-    'bg-accent hover:bg-accent-soft text-white shadow-lg shadow-accent/25 disabled:bg-slate-700',
+    'bg-accent hover:bg-accent-hover text-white shadow-lg shadow-accent/25 disabled:bg-slate-700',
   secondary:
     'bg-surface-overlay hover:bg-slate-700 text-slate-100 border border-slate-700',
   ghost: 'hover:bg-surface-overlay text-slate-300',

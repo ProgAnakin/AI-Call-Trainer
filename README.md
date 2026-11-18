@@ -184,8 +184,12 @@ so you can train on *your* product, not the demo one. Each product shows its **b
 ### Also
 
 - **Installable PWA** — add to your phone/desktop; the shell works offline.
-- **Accessibility** — visible keyboard focus, `prefers-reduced-motion` support, a
-  skip-to-content link, and a language-synced `<html lang>`.
+- **Accessibility** — checked against WCAG 2.1 AA with axe-core on every screen *and* every
+  state (a call in progress, the scorecard, the drill feedback, the Library forms), in CI.
+  AA text contrast, every form control named, visible keyboard focus, `prefers-reduced-motion`
+  support, a skip-to-content link, and a language-synced `<html lang>`.
+- **Phone-ready** — no horizontal scroll down to a 320 px screen, in all three languages
+  (Italian is the longest, so it is the worst case the layout is tested against).
 - **Privacy & Terms** (`/legal`) — plain-language LGPD/GDPR disclosures linked in the footer.
 
 ---
@@ -202,7 +206,7 @@ so you can train on *your* product, not the demo one. Each product shows its **b
 | LLM | Claude API (`claude-haiku-4-5` by default) | The prospect and the coach; the only paid piece |
 | Backend | Supabase (Postgres + Edge Functions) | Free tier; the Edge Function is what protects the API key |
 | Hosting | Vercel | Free tier, deploys on push, HTTPS (required for the mic) |
-| Tests | Vitest + Playwright | 176 unit tests for scoring and storage logic; 13 end-to-end browser checks |
+| Tests | Vitest + Playwright + axe-core | 176 unit tests for scoring and storage logic; 19 end-to-end checks incl. WCAG and mobile layout |
 
 ---
 
@@ -486,7 +490,7 @@ the migration, it needs two one-time settings in the Supabase dashboard:
 ```bash
 npm test           # Vitest — 176 unit tests
 npm run build      # tsc --build + vite build
-npm run test:e2e   # 13 browser checks against the production build
+npm run test:e2e   # 19 browser checks against the production build
 ```
 
 **Unit tests** cover the logic that must not silently drift: conversation metrics, question
@@ -501,11 +505,26 @@ language switching, the 404 route, and two regressions worth keeping nailed down
 booting with `localStorage` denied (Safari Private Browsing, Brave shields) and a failed
 route chunk landing on the error boundary instead of a blank page.
 
-Playwright is deliberately not a dependency (it pulls ~150 MB of browser). The script
-resolves it locally or globally and skips with instructions if it is missing:
+Two more groups guard the things that are easy to break without noticing:
+
+- **Phone layout.** Every route is loaded at 375 px and 320 px, in English and Italian, and
+  the page must not scroll sideways. This once failed on *every* page: the header put the
+  logo, five links and the language switch on one line that never wrapped, so the page was
+  554 px wide on a 375 px screen.
+- **Accessibility.** axe-core runs against WCAG 2.1 A/AA on static pages, the onboarding
+  overlay, a call through to the scorecard, and the drill and email lab mid-use. It
+  re-measures until the page settles rather than trusting a single reading, because
+  measuring mid-animation reports contrast failures that disappear a second later; a
+  violation has to *persist* for 3 s to fail.
+
+Both groups were verified the honest way: run against the code from before the fixes, they
+fail on exactly the defects they describe.
+
+Playwright and axe-core are deliberately not dependencies (the browser alone is ~150 MB).
+The script resolves them locally or globally and skips with instructions if they are missing:
 
 ```bash
-npm i -D playwright && npx playwright install chromium
+npm i -D playwright axe-core && npx playwright install chromium
 ```
 
 CI runs unit tests, typecheck, build and the end-to-end checks on every push.

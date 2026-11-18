@@ -15,7 +15,7 @@ import {
   type ObjectionEval,
 } from '@/lib/objections';
 import { DRILL_LENGTH, DRILL_TIMER_SECONDS } from '@/lib/thresholds';
-import { Badge, Button, Card, Select, Textarea } from '@/components/ui';
+import { Badge, Button, Card, Field, Select, Textarea } from '@/components/ui';
 import { useT } from '@/i18n';
 
 type Phase = 'setup' | 'active' | 'reveal' | 'done';
@@ -130,8 +130,7 @@ export function Drill() {
         <h1 className="text-2xl font-bold">🥊 {t('drill.title')}</h1>
         <p className="mb-6 mt-1 text-sm text-slate-400">{t('drill.subtitle')}</p>
         <Card className="space-y-4">
-          <div>
-            <p className="mb-1 text-xs font-medium text-slate-400">{t('drill.chooseProduct')}</p>
+          <Field label={t('drill.chooseProduct')}>
             <Select value={productId} onChange={(e) => setProductId(e.target.value)}>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -139,7 +138,7 @@ export function Drill() {
                 </option>
               ))}
             </Select>
-          </div>
+          </Field>
 
           <div className="rounded-lg border border-slate-800 bg-surface p-3">
             <label className="flex cursor-pointer items-center justify-between gap-2">
@@ -298,6 +297,7 @@ export function Drill() {
               ref={textareaRef}
               rows={4}
               value={draft}
+              aria-label={t('drill.placeholder')}
               placeholder={t('drill.placeholder')}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {

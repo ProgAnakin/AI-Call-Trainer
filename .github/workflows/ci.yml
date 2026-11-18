@@ -29,12 +29,14 @@ jobs:
       - name: Typecheck + production build
         run: npm run build
 
-      # Playwright fica fora do package.json (traz ~150 MB de navegador), então
-      # é instalado só aqui, sem gravar na árvore de dependências. Versão presa
-      # para o CI não quebrar sozinho num release novo.
-      - name: Install Playwright (Chromium)
+      # Playwright e axe-core ficam fora do package.json (o navegador sozinho traz
+      # ~150 MB), então são instalados só aqui, sem gravar na árvore de dependências.
+      # Versões presas para o CI não quebrar sozinho num release novo. Sem o
+      # axe-core a verificação de acessibilidade seria PULADA em silêncio, então ele
+      # precisa estar aqui.
+      - name: Install Playwright (Chromium) and axe-core
         run: |
-          npm install --no-save playwright@1.63.0
+          npm install --no-save playwright@1.63.0 axe-core@4.10.2
           npx playwright install --with-deps chromium
 
       - name: End-to-end checks

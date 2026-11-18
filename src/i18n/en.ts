@@ -225,6 +225,7 @@ export const en: typeof pt = {
   'sync.title': 'Sync your progress',
   'sync.subtitle': 'Sign in with your email to reach your progress on any device.',
   'sync.emailPlaceholder': 'you@email.com',
+  'sync.emailLabel': 'Email address',
   'sync.sendLink': 'Send sign-in link',
   'sync.sending': 'Sending...',
   'sync.linkSent': 'Link sent! Open the email on this device to sign in.',
@@ -241,6 +242,7 @@ export const en: typeof pt = {
 
   // Gamification
   'gam.lvl': 'LVL',
+  'gam.progressLabel': 'Progress to the next level',
   'gam.xpTotal': '{xp} XP',
   'gam.unlocked': '{n} achievements',
   'gam.xpToNext': '{xp} XP',

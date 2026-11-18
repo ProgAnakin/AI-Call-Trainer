@@ -233,6 +233,7 @@ export const pt = {
   'sync.title': 'Sincronizar progresso',
   'sync.subtitle': 'Entre com seu e-mail para acessar seu progresso em qualquer dispositivo.',
   'sync.emailPlaceholder': 'voce@email.com',
+  'sync.emailLabel': 'Endereço de e-mail',
   'sync.sendLink': 'Enviar link de acesso',
   'sync.sending': 'Enviando...',
   'sync.linkSent': 'Link enviado! Abra o e-mail neste dispositivo para entrar.',
@@ -249,6 +250,7 @@ export const pt = {
 
   // Gamificação
   'gam.lvl': 'LVL',
+  'gam.progressLabel': 'Progresso até o próximo nível',
   'gam.xpTotal': '{xp} XP',
   'gam.unlocked': '{n} conquistas',
   'gam.xpToNext': '{xp} XP',

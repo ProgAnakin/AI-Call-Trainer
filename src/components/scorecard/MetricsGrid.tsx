@@ -35,7 +35,7 @@ function StatTile({
         {value}
       </p>
       <p className="mt-0.5 text-xs text-slate-500">{label}</p>
-      {hint && <p className="text-[10px] text-slate-600">{hint}</p>}
+      {hint && <p className="text-[10px] text-slate-500">{hint}</p>}
     </div>
   );
 }
