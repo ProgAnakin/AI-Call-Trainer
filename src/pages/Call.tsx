@@ -83,9 +83,9 @@ export function Call() {
   if (!scenario || !persona || !product) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center text-slate-400">
-        Scenario not found.{' '}
+        {t('notFound.scenario')}{' '}
         <button className="text-accent-soft underline" onClick={() => navigate('/')}>
-          ← Home
+          ← {t('notFound.home')}
         </button>
       </div>
     );
@@ -419,6 +419,7 @@ export function Call() {
                   // Sem rótulo nem placeholder: era um campo totalmente anônimo
                   // para leitor de tela.
                   aria-label={t('call.editHint')}
+                  maxLength={1500}
                   value={pendingVoiceText}
                   onChange={(e) => setPendingVoiceText(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && void confirmVoiceText()}
@@ -475,6 +476,7 @@ export function Call() {
                 value={draft}
                 disabled={busy}
                 aria-label={t('call.typePlaceholder')}
+                maxLength={1500}
                 placeholder={t('call.typePlaceholder')}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && void handleTextSubmit()}

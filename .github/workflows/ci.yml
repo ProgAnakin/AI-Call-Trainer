@@ -5,6 +5,11 @@ on:
     branches: ['**']
   pull_request:
 
+# Privilégio mínimo: sem isto o GITHUB_TOKEN herda as permissões padrão do
+# repositório (em muitos, leitura E escrita). O CI só precisa ler o código.
+permissions:
+  contents: read
+
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
@@ -22,6 +27,9 @@ jobs:
       - name: Dependency audit (high+)
         run: npm audit --audit-level=high
         continue-on-error: true
+
+      - name: Lint
+        run: npm run lint
 
       - name: Unit tests
         run: npm test

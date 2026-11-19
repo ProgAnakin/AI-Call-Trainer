@@ -3,6 +3,16 @@ import { SEED_PRODUCTS } from '@/data/seed/products';
 import { SEED_PERSONAS } from '@/data/seed/personas';
 import { SEED_SCENARIOS } from '@/data/seed/scenarios';
 import * as safeStorage from '@/lib/safeStorage';
+import {
+  isEvaluation,
+  isPersona,
+  isProduct,
+  isScenario,
+  isSession,
+  isTurn,
+  MAX_ITEMS_PER_COLLECTION,
+  sanitizeList,
+} from '@/lib/schema';
 
 /**
  * Camada de persistência única para o app.
@@ -22,9 +32,17 @@ const LS_KEYS = {
   scenarios: 'act.custom_scenarios',
 } as const;
 
-function readLs<T>(key: string): T[] {
-  const items = safeStorage.getJson<T[]>(key, []);
-  return Array.isArray(items) ? items : [];
+/**
+ * Lê uma coleção do storage SEMPRE passando por uma guarda de schema.
+ *
+ * O storage é entrada não confiável (backup importado, sync corrompido,
+ * extensão, edição manual). Sem a guarda, um único item malformado fazia
+ * `listSessions()` lançar e derrubava Home e Progresso — com o dado ruim
+ * persistindo, então recarregar não resolvia. Itens inválidos são omitidos da
+ * leitura e deixam de existir no próximo `writeLs` (autocura).
+ */
+function readLs<T>(key: string, guard: (v: unknown) => v is T): T[] {
+  return sanitizeList(safeStorage.getJson<unknown>(key, []), guard);
 }
 
 /** Chaves de histórico — podáveis. O catálogo custom do usuário nunca é podado. */
@@ -49,7 +67,7 @@ export function pruneHistory(max = MAX_SESSIONS): {
   turns: number;
   evaluations: number;
 } {
-  const sessions = readLs<Session>(LS_KEYS.sessions);
+  const sessions = readLs(LS_KEYS.sessions, isSession);
   if (sessions.length <= max) return { sessions: 0, turns: 0, evaluations: 0 };
 
   // Mais recentes primeiro; sessões sem data vão para o fim (saem primeiro).
@@ -58,8 +76,8 @@ export function pruneHistory(max = MAX_SESSIONS): {
     .slice(0, max);
   const keptIds = new Set(kept.map((s) => s.id));
 
-  const turns = readLs<Turn>(LS_KEYS.turns);
-  const evaluations = readLs<Evaluation>(LS_KEYS.evaluations);
+  const turns = readLs(LS_KEYS.turns, isTurn);
+  const evaluations = readLs(LS_KEYS.evaluations, isEvaluation);
   const keptTurns = turns.filter((t) => keptIds.has(t.session_id));
   const keptEvals = evaluations.filter((e) => keptIds.has(e.session_id));
 
@@ -86,14 +104,18 @@ function writeLs<T>(key: string, items: T[]): boolean {
   if (safeStorage.setJson(key, items)) return true;
   if (!(HISTORY_KEYS as readonly string[]).includes(key)) return false;
 
-  const sessionCount = readLs<Session>(LS_KEYS.sessions).length;
+  const sessionCount = readLs(LS_KEYS.sessions, isSession).length;
   if (sessionCount < 2) return false; // nada a podar: é o storage que está negado
   pruneHistory(Math.floor(sessionCount / 2));
   return safeStorage.setJson(key, items);
 }
 
-function upsertLs<T extends { id: string }>(key: string, item: T): T {
-  const items = readLs<T>(key);
+function upsertLs<T extends { id: string }>(
+  key: string,
+  item: T,
+  guard: (v: unknown) => v is T,
+): T {
+  const items = readLs(key, guard);
   const idx = items.findIndex((i) => i.id === item.id);
   if (idx >= 0) items[idx] = item;
   else items.push(item);
@@ -103,16 +125,31 @@ function upsertLs<T extends { id: string }>(key: string, item: T): T {
 
 // ---------- Catálogo (seed + custom) ----------
 
+/** Ids do catálogo embutido — nenhum item do usuário (ou de backup) pode usá-los. */
+const SEED_IDS: ReadonlySet<string> = new Set([
+  ...SEED_PRODUCTS.map((p) => p.id),
+  ...SEED_PERSONAS.map((p) => p.id),
+  ...SEED_SCENARIOS.map((s) => s.id),
+]);
+
+/**
+ * Itens do usuário, sem os que colidem com o catálogo embutido. Sem esse filtro
+ * um backup com o id de um produto oficial o substituiria (ou duplicaria) por uma
+ * versão adulterada — por exemplo, objeções com instruções falsas.
+ */
+const customOnly = <T extends { id: string }>(items: T[]): T[] =>
+  items.filter((i) => !SEED_IDS.has(i.id));
+
 export function listProducts(): Product[] {
-  return [...SEED_PRODUCTS, ...readLs<Product>(LS_KEYS.products)];
+  return [...SEED_PRODUCTS, ...customOnly(readLs(LS_KEYS.products, isProduct))];
 }
 
 export function listPersonas(): Persona[] {
-  return [...SEED_PERSONAS, ...readLs<Persona>(LS_KEYS.personas)];
+  return [...SEED_PERSONAS, ...customOnly(readLs(LS_KEYS.personas, isPersona))];
 }
 
 export function listScenarios(): Scenario[] {
-  return [...SEED_SCENARIOS, ...readLs<Scenario>(LS_KEYS.scenarios)];
+  return [...SEED_SCENARIOS, ...customOnly(readLs(LS_KEYS.scenarios, isScenario))];
 }
 
 export function getProduct(id: string): Product | undefined {
@@ -128,29 +165,33 @@ export function getScenario(id: string): Scenario | undefined {
 }
 
 export function saveCustomProduct(product: Product): Product {
-  return upsertLs(LS_KEYS.products, { ...product, custom: true });
+  return upsertLs(LS_KEYS.products, { ...product, custom: true }, isProduct);
 }
 
 export function saveCustomPersona(persona: Persona): Persona {
-  return upsertLs(LS_KEYS.personas, { ...persona, custom: true });
+  return upsertLs(LS_KEYS.personas, { ...persona, custom: true }, isPersona);
 }
 
 export function saveCustomScenario(scenario: Scenario): Scenario {
-  return upsertLs(LS_KEYS.scenarios, { ...scenario, custom: true });
+  return upsertLs(LS_KEYS.scenarios, { ...scenario, custom: true }, isScenario);
 }
 
 export function deleteCustom(kind: 'products' | 'personas' | 'scenarios', id: string): void {
   const key = LS_KEYS[kind];
+  // As três guardas validam tipos diferentes; aqui só o `id` importa.
+  const guard = { products: isProduct, personas: isPersona, scenarios: isScenario }[
+    kind
+  ] as (v: unknown) => v is { id: string };
   writeLs(
     key,
-    readLs<{ id: string }>(key).filter((i) => i.id !== id),
+    readLs(key, guard).filter((i) => i.id !== id),
   );
 }
 
 // ---------- Sessões / turnos / avaliações ----------
 
 export async function createSession(session: Session): Promise<Session> {
-  upsertLs(LS_KEYS.sessions, session);
+  upsertLs(LS_KEYS.sessions, session, isSession);
   // Poda no começo da call, não no fim: aqui uma falha de cota ainda não custa
   // nada ao usuário, e libera espaço para o transcript que está por vir.
   pruneHistory();
@@ -162,7 +203,7 @@ export async function finishSession(
   endedAt: string,
   outcome: Session['outcome'],
 ): Promise<void> {
-  const sessions = readLs<Session>(LS_KEYS.sessions);
+  const sessions = readLs(LS_KEYS.sessions, isSession);
   const s = sessions.find((x) => x.id === sessionId);
   if (s) {
     s.ended_at = endedAt;
@@ -172,39 +213,39 @@ export async function finishSession(
 }
 
 export async function saveTurn(turn: Turn): Promise<Turn> {
-  upsertLs(LS_KEYS.turns, turn);
+  upsertLs(LS_KEYS.turns, turn, isTurn);
   return turn;
 }
 
 export async function saveEvaluation(evaluation: Evaluation): Promise<Evaluation> {
-  upsertLs(LS_KEYS.evaluations, evaluation);
+  upsertLs(LS_KEYS.evaluations, evaluation, isEvaluation);
   return evaluation;
 }
 
 export function listSessions(): Session[] {
-  return readLs<Session>(LS_KEYS.sessions).sort((a, b) =>
+  return readLs(LS_KEYS.sessions, isSession).sort((a, b) =>
     b.started_at.localeCompare(a.started_at),
   );
 }
 
 export function listTurns(sessionId: string): Turn[] {
-  return readLs<Turn>(LS_KEYS.turns)
+  return readLs(LS_KEYS.turns, isTurn)
     .filter((t) => t.session_id === sessionId)
     .sort((a, b) => a.ts.localeCompare(b.ts));
 }
 
 export function listEvaluations(): Evaluation[] {
-  return readLs<Evaluation>(LS_KEYS.evaluations).sort((a, b) =>
+  return readLs(LS_KEYS.evaluations, isEvaluation).sort((a, b) =>
     a.created_at.localeCompare(b.created_at),
   );
 }
 
 export function getEvaluationBySession(sessionId: string): Evaluation | undefined {
-  return readLs<Evaluation>(LS_KEYS.evaluations).find((e) => e.session_id === sessionId);
+  return readLs(LS_KEYS.evaluations, isEvaluation).find((e) => e.session_id === sessionId);
 }
 
 export function getSession(sessionId: string): Session | undefined {
-  return readLs<Session>(LS_KEYS.sessions).find((s) => s.id === sessionId);
+  return readLs(LS_KEYS.sessions, isSession).find((s) => s.id === sessionId);
 }
 
 // ---------- Backup / restore ----------
@@ -225,37 +266,53 @@ export function readBackup(): Backup {
   return {
     version: 1,
     exported_at: new Date().toISOString(),
-    sessions: readLs<Session>(LS_KEYS.sessions),
-    turns: readLs<Turn>(LS_KEYS.turns),
-    evaluations: readLs<Evaluation>(LS_KEYS.evaluations),
-    products: readLs<Product>(LS_KEYS.products),
-    personas: readLs<Persona>(LS_KEYS.personas),
-    scenarios: readLs<Scenario>(LS_KEYS.scenarios),
+    sessions: readLs(LS_KEYS.sessions, isSession),
+    turns: readLs(LS_KEYS.turns, isTurn),
+    evaluations: readLs(LS_KEYS.evaluations, isEvaluation),
+    products: readLs(LS_KEYS.products, isProduct),
+    personas: readLs(LS_KEYS.personas, isPersona),
+    scenarios: readLs(LS_KEYS.scenarios, isScenario),
   };
 }
 
-/** Merges by id — importing the same backup twice never duplicates rows. */
-function mergeById<T extends { id: string }>(key: string, incoming: T[] | undefined): number {
-  if (!Array.isArray(incoming) || incoming.length === 0) return 0;
-  const existing = readLs<T>(key);
-  const byId = new Map(existing.map((item) => [item.id, item]));
+/**
+ * Merges by id — importing the same backup twice never duplicates rows.
+ *
+ * `incoming` é ENTRADA NÃO CONFIÁVEL: passa pela guarda de schema (item a item,
+ * com teto de quantidade) antes de tocar o storage. Itens inválidos são
+ * descartados em silêncio; um backup meio ruim ainda importa o que presta.
+ * `protectedIds` impede que o backup substitua o catálogo embutido.
+ */
+function mergeById<T extends { id: string }>(
+  key: string,
+  incoming: unknown,
+  guard: (v: unknown) => v is T,
+  opts: { protectedIds?: ReadonlySet<string>; markCustom?: boolean } = {},
+): number {
+  const clean = sanitizeList(incoming, guard).filter((i) => !opts.protectedIds?.has(i.id));
+  if (clean.length === 0) return 0;
+
+  const byId = new Map(readLs(key, guard).map((item) => [item.id, item]));
   let added = 0;
-  for (const item of incoming) {
-    if (!item || typeof item.id !== 'string') continue;
+  for (const item of clean) {
     if (!byId.has(item.id)) added++;
-    byId.set(item.id, item);
+    // Catálogo importado é sempre "do usuário", nunca "embutido".
+    byId.set(item.id, opts.markCustom ? ({ ...item, custom: true } as T) : item);
   }
-  writeLs(key, [...byId.values()]);
+  writeLs(key, [...byId.values()].slice(0, MAX_ITEMS_PER_COLLECTION));
   return added;
 }
 
 /** Restores a backup into localStorage. Returns how many new sessions landed. */
 export function restoreBackup(backup: Partial<Backup>): number {
-  const sessions = mergeById(LS_KEYS.sessions, backup.sessions);
-  mergeById(LS_KEYS.turns, backup.turns);
-  mergeById(LS_KEYS.evaluations, backup.evaluations);
-  mergeById(LS_KEYS.products, backup.products);
-  mergeById(LS_KEYS.personas, backup.personas);
-  mergeById(LS_KEYS.scenarios, backup.scenarios);
+  // Um backup pode chegar como qualquer coisa (arquivo, nuvem): só objetos servem.
+  if (!backup || typeof backup !== 'object') return 0;
+  const sessions = mergeById(LS_KEYS.sessions, backup.sessions, isSession);
+  mergeById(LS_KEYS.turns, backup.turns, isTurn);
+  mergeById(LS_KEYS.evaluations, backup.evaluations, isEvaluation);
+  const catalog = { protectedIds: SEED_IDS, markCustom: true };
+  mergeById(LS_KEYS.products, backup.products, isProduct, catalog);
+  mergeById(LS_KEYS.personas, backup.personas, isPersona, catalog);
+  mergeById(LS_KEYS.scenarios, backup.scenarios, isScenario, catalog);
   return sessions;
 }

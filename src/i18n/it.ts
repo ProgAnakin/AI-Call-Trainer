@@ -370,4 +370,11 @@ export const it: typeof pt = {
   'notFound.title': 'Pagina non trovata',
   'notFound.body': 'Questo indirizzo non esiste. Lo scenario potrebbe essere stato eliminato, o il link è sbagliato.',
   'notFound.home': 'Torna alla home',
+  'notFound.scenario': 'Scenario non trovato.',
+  'notFound.scorecard': 'Scorecard non trovato.',
+  'call.prospectLabel': 'Prospect',
+  'chart.weekly': 'Grafico del punteggio settimanale',
+  'form.stage.cold': 'Freddo',
+  'form.stage.aware': 'Consapevole',
+  'form.stage.evaluating': 'In valutazione',
 };

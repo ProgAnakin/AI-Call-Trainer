@@ -135,6 +135,12 @@ Open your site. If it worked:
 Use your **production** URL from the Vercel dashboard, e.g.
 `https://your-app.vercel.app`.
 
+**Check the database is locked down** (30 seconds, worth doing once). In Supabase open
+**Authentication → Policies** and confirm there is **no policy at all** on `sessions`,
+`turns`, `evaluations` and `usage_events`. If you see policies named `anon_rw_*`,
+migration `0003` was not run — run it now (Step 2). The repository's tests prove the
+SQL is correct, but only this check proves *your* project matches it.
+
 ---
 
 ## Optional A — Turn on cross-device sync
@@ -165,3 +171,10 @@ supabase secrets set ANTHROPIC_EVAL_MODEL=claude-sonnet-4-6  # deeper coach (~3x
   with Optional Step B or wait for the day to roll over (UTC).
 - **500 error on a call** → the `ANTHROPIC_API_KEY` was not set as a secret, or
   the Anthropic account is out of credit. Redo Steps 3 and 4.
+- **503 "usage limiter unavailable"** → the functions could not reach the
+  `usage_events` table, so they **refuse to run rather than run without a spend
+  limit**. Almost always it means migration `0001` was not run (Step 2). Run it,
+  then try again. This is deliberate: an unmetered endpoint can run up a bill.
+- **400 "invalid payload: …"** → the request failed validation. The text names the
+  field. If you wrote a custom persona or scenario with unusual values, that field
+  is the culprit; on a normal scenario this should never appear.

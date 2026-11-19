@@ -206,7 +206,7 @@ so you can train on *your* product, not the demo one. Each product shows its **b
 | LLM | Claude API (`claude-haiku-4-5` by default) | The prospect and the coach; the only paid piece |
 | Backend | Supabase (Postgres + Edge Functions) | Free tier; the Edge Function is what protects the API key |
 | Hosting | Vercel | Free tier, deploys on push, HTTPS (required for the mic) |
-| Tests | Vitest + Playwright + axe-core | 176 unit tests for scoring and storage logic; 19 end-to-end checks incl. WCAG and mobile layout |
+| Tests | Vitest + Playwright + axe-core | 460 unit tests incl. attack suites for the Edge Functions and the client; 26 end-to-end checks incl. WCAG, mobile layout and security headers |
 
 ---
 
@@ -216,9 +216,27 @@ so you can train on *your* product, not the demo one. Each product shows its **b
 
 Every LLM call goes through a Supabase Edge Function (`/roleplay`, `/evaluate`) that holds
 the key as a secret. The browser only ever sees the Supabase anon key, which is public by
-design. On top of that, the functions apply **per-device rate limiting** (defaults: 20 rep
-turns per call, 6 calls/day, 8 evaluations/day) so a runaway loop can't run up a bill.
+design.
 
+The threat model is small on purpose. The app is single-player and keeps your history in
+your own browser, so there is no other user's data to steal. What *can* go wrong is
+(1) someone running up your Anthropic bill through the public endpoints, and (2) hostile
+data — an imported backup, a corrupted `localStorage` — breaking the app for the person
+who loads it. The controls follow from that:
+
+| Risk | Control |
+|---|---|
+| **Cost abuse** | Per-device **and** per-IP daily limits (defaults: 20 rep turns per call, 6 calls/day, 8 evaluations/day). The limiter *reserves, then verifies, then rolls back*, so concurrent bursts cannot slip past the cap, and it **fails closed**: if the database is unreachable the request is refused rather than allowed. |
+| **Oversized or crafted payloads** | Body capped before parsing; every field validated against an allowlist (type, size, enum). The model, token limits and API key are decided server-side and cannot be overridden by the client. Worst accepted request is ~30 KB (`/roleplay`) and ~45 KB (`/evaluate`). |
+| **Other sites using your API** | CORS allowlist (`ALLOWED_ORIGINS`); a disallowed origin gets *no* `Access-Control-Allow-Origin` header at all. |
+| **Score forging** | The overall score is recomputed server-side from the weighted criteria; the model cannot set it. |
+| **Hostile backup or storage** | Every read from `localStorage`/backup goes through a schema guard; malformed items are dropped, `__proto__`-style keys are refused, imports are size-capped, and a backup cannot overwrite the built-in catalog. |
+| **XSS / clickjacking** | React escapes all text and no code uses `dangerouslySetInnerHTML`. Strict CSP (`script-src 'self'`), `frame-ancestors 'none'`, HSTS, COOP/CORP. |
+| **Database exposure** | Row-level security on every table; the anon key cannot read or write session data (migration `0003`). Cloud-sync backups are readable only by their owner. |
+
+All of it is exercised by tests that attack the real code — see
+[`docs/SECURITY-TESTING.md`](docs/SECURITY-TESTING.md) for what is covered, what was found,
+and what could not be verified. To report a vulnerability, see [`SECURITY.md`](SECURITY.md).
 ---
 
 ## Cost
@@ -488,9 +506,10 @@ the migration, it needs two one-time settings in the Supabase dashboard:
 ## Testing
 
 ```bash
-npm test           # Vitest — 176 unit tests
+npm test           # Vitest — 460 unit tests (incl. security attack suites)
+npm run lint       # ESLint (react-hooks, TypeScript)
 npm run build      # tsc --build + vite build
-npm run test:e2e   # 19 browser checks against the production build
+npm run test:e2e   # 26 browser checks against the production build
 ```
 
 **Unit tests** cover the logic that must not silently drift: conversation metrics, question

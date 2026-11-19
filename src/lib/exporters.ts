@@ -10,6 +10,7 @@ import {
   type Backup,
 } from './storage';
 import { computeMetrics } from './metrics';
+import { MAX_IMPORT_BYTES } from '@/lib/schema';
 
 /** Triggers a browser download for text content. */
 function download(filename: string, content: string, mime: string): void {
@@ -116,6 +117,9 @@ export interface ImportResult {
 
 /** Restores a backup file produced by exportBackupJson(). */
 export async function importBackupFile(file: File): Promise<ImportResult> {
+  // Teto ANTES de ler: file.text() de um arquivo gigante trava a aba, e nenhum
+  // backup legítimo passa do que o localStorage comporta (~5 MB).
+  if (file.size > MAX_IMPORT_BYTES) return { ok: false, sessions: 0, error: 'too-large' };
   try {
     const parsed = JSON.parse(await file.text()) as Partial<Backup>;
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.sessions)) {

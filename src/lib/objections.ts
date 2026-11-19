@@ -114,8 +114,32 @@ type RawHistory = Record<string, Record<string, { n: number; sum: number }>>;
 
 const HISTORY_KEY = 'act.drill.history';
 
+/**
+ * Chaves que, usadas como índice de um objeto comum, alcançam o protótipo.
+ *
+ * O id do produto e o texto da objeção são strings controladas por quem escreve
+ * o produto — ou por um backup importado. Com `history[productId] ??= {}` e
+ * productId === "__proto__", a expressão devolve o PRÓPRIO Object.prototype, e a
+ * escrita seguinte cria propriedades em todo objeto do app (poluição de
+ * protótipo). Uma objeção chamada "__proto__" faz o mesmo no nível de baixo.
+ */
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const hasOwn = (o: object, k: string): boolean => Object.prototype.hasOwnProperty.call(o, k);
+const isPlainObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+
 function readHistory(): RawHistory {
-  return safeStorage.getJson<RawHistory>(HISTORY_KEY, {});
+  const raw = safeStorage.getJson<unknown>(HISTORY_KEY, {});
+  return isPlainObject(raw) ? (raw as RawHistory) : {};
+}
+
+/** Entrada bem formada ({n, sum} finitos) ou undefined — nunca confia no storage. */
+function cleanEntry(v: unknown): { n: number; sum: number } | undefined {
+  if (!isPlainObject(v)) return undefined;
+  const { n, sum } = v;
+  return typeof n === 'number' && typeof sum === 'number' && Number.isFinite(n) && Number.isFinite(sum)
+    ? { n, sum }
+    : undefined;
 }
 
 /**
@@ -125,10 +149,15 @@ function readHistory(): RawHistory {
  * sobreviver a uma troca de idioma da interface.
  */
 export function getObjectionStats(productId: string): Record<string, ObjectionStat> {
-  const perProduct = readHistory()[productId] ?? {};
   const out: Record<string, ObjectionStat> = {};
-  for (const [key, { n, sum }] of Object.entries(perProduct)) {
-    if (n > 0) out[key] = { attempts: n, avg: sum / n };
+  if (UNSAFE_KEYS.has(productId)) return out;
+  const history = readHistory();
+  const perProduct = hasOwn(history, productId) ? history[productId] : undefined;
+  if (!isPlainObject(perProduct)) return out;
+  for (const [key, raw] of Object.entries(perProduct)) {
+    const entry = cleanEntry(raw);
+    if (UNSAFE_KEYS.has(key) || !entry || entry.n <= 0) continue;
+    out[key] = { attempts: entry.n, avg: entry.sum / entry.n };
   }
   return out;
 }
@@ -139,11 +168,18 @@ export function recordObjectionResult(
   baseObjection: string,
   score: number,
 ): void {
+  // Chave perigosa: não registra (o drill funciona, só não adapta essa objeção).
+  if (UNSAFE_KEYS.has(productId) || UNSAFE_KEYS.has(baseObjection)) return;
+  if (!Number.isFinite(score)) return;
+
   const history = readHistory();
-  const perProduct = history[productId] ?? (history[productId] = {});
-  const entry = perProduct[baseObjection] ?? (perProduct[baseObjection] = { n: 0, sum: 0 });
-  entry.n += 1;
-  entry.sum += score;
+  const existing = hasOwn(history, productId) ? history[productId] : undefined;
+  const perProduct: Record<string, { n: number; sum: number }> = isPlainObject(existing)
+    ? (existing as Record<string, { n: number; sum: number }>)
+    : {};
+  const prev = hasOwn(perProduct, baseObjection) ? cleanEntry(perProduct[baseObjection]) : undefined;
+  perProduct[baseObjection] = { n: (prev?.n ?? 0) + 1, sum: (prev?.sum ?? 0) + score };
+  history[productId] = perProduct;
   // Storage indisponível: o drill funciona, só não adapta.
   safeStorage.setJson(HISTORY_KEY, history);
 }
@@ -208,15 +244,26 @@ const BEST_KEY = 'act.drill.best';
 
 type BestMap = Record<string, number>;
 
+/** Mapa vindo do storage, ou vazio se estiver adulterado (string, array, null...). */
+function readBest(): BestMap {
+  const raw = safeStorage.getJson<unknown>(BEST_KEY, {});
+  return isPlainObject(raw) ? (raw as BestMap) : {};
+}
+
 export function getDrillBest(productId: string): number | null {
-  const map = safeStorage.getJson<BestMap>(BEST_KEY, {});
-  return typeof map[productId] === 'number' ? map[productId] : null;
+  if (UNSAFE_KEYS.has(productId)) return null;
+  const map = readBest();
+  const v = hasOwn(map, productId) ? map[productId] : undefined;
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
 /** Salva se for recorde. Retorna true se bateu o recorde. */
 export function saveDrillBest(productId: string, avg: number): boolean {
-  const map = safeStorage.getJson<BestMap>(BEST_KEY, {});
-  const prev = map[productId];
+  if (UNSAFE_KEYS.has(productId) || !Number.isFinite(avg)) return false;
+  // Antes, um "act.drill.best" = "x" no storage fazia `map[id] = avg` numa
+  // STRING — que lança em modo estrito e quebrava o fim do drill.
+  const map = readBest();
+  const prev = hasOwn(map, productId) ? map[productId] : undefined;
   if (typeof prev === 'number' && prev >= avg) return false;
   map[productId] = avg;
   safeStorage.setJson(BEST_KEY, map);

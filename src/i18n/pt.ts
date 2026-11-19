@@ -377,4 +377,11 @@ export const pt = {
   'notFound.title': 'Página não encontrada',
   'notFound.body': 'Este endereço não existe. O cenário pode ter sido apagado, ou o link está errado.',
   'notFound.home': 'Voltar ao início',
+  'notFound.scenario': 'Cenário não encontrado.',
+  'notFound.scorecard': 'Scorecard não encontrado.',
+  'call.prospectLabel': 'Prospect',
+  'chart.weekly': 'Gráfico da nota semanal',
+  'form.stage.cold': 'Frio',
+  'form.stage.aware': 'Ciente',
+  'form.stage.evaluating': 'Avaliando',
 };

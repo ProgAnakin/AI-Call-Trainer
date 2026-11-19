@@ -171,7 +171,10 @@ export function computeMetrics(
   const ratio = talkRatio(turns);
   const start = new Date(startedAt).getTime();
   const end = new Date(endedAt).getTime();
-  const durationSeconds = Math.max(0, Math.round((end - start) / 1000));
+  // Data inválida (backup adulterado, relógio corrompido) dava NaN, que se
+  // espalhava por ritmo de fala, gráficos e CSV. Sem janela válida, duração 0.
+  const span = end - start;
+  const durationSeconds = Number.isFinite(span) ? Math.max(0, Math.round(span / 1000)) : 0;
   const questions = classifyQuestions(turns, language);
   // Ritmo só faz sentido com uma janela real (voz). Abaixo de 5s = null.
   const wordsPerMinute =

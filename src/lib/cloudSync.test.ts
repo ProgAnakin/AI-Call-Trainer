@@ -22,6 +22,21 @@ class MemoryStorage {
   }
 }
 
+/**
+ * Uma sessão REAL. Antes os testes usavam `sess('s1')` — um objeto sem
+ * `started_at`, que é exatamente o formato que fazia listSessions() lançar
+ * TypeError. O teste afirmava, na prática, que o dado que causa o crash entrava
+ * com sucesso; agora esse formato é descartado (ver security.test.ts, S1).
+ */
+const sess = (id: string) => ({
+  id,
+  scenario_id: 'sc1',
+  started_at: '2026-01-01T10:00:00.000Z',
+  ended_at: null,
+  mode: 'text',
+  outcome: null,
+});
+
 beforeEach(() => {
   (globalThis as unknown as { localStorage: Storage }).localStorage =
     new MemoryStorage() as unknown as Storage;
@@ -36,13 +51,13 @@ describe('mergeCloudData', () => {
   });
 
   it('merges sessions and reports how many are new', () => {
-    const cloud = { version: 1, sessions: [{ id: 's1' }, { id: 's2' }], turns: [], evaluations: [] };
+    const cloud = { version: 1, sessions: [sess('s1'), sess('s2')], turns: [], evaluations: [] };
     expect(mergeCloudData(cloud)).toBe(2);
     expect(readBackup().sessions).toHaveLength(2);
   });
 
   it('is idempotent — pulling the same backup twice adds nothing', () => {
-    const cloud = { version: 1, sessions: [{ id: 's1' }, { id: 's2' }] };
+    const cloud = { version: 1, sessions: [sess('s1'), sess('s2')] };
     expect(mergeCloudData(cloud)).toBe(2);
     expect(mergeCloudData(cloud)).toBe(0);
     expect(readBackup().sessions).toHaveLength(2);
@@ -50,15 +65,15 @@ describe('mergeCloudData', () => {
 
   it('keeps local-only sessions when pulling different cloud data', () => {
     // A session created on this device.
-    mergeCloudData({ sessions: [{ id: 'local' }] });
+    mergeCloudData({ sessions: [sess('local')] });
     // Pulling a cloud row that has a different session must not drop the local one.
-    expect(mergeCloudData({ sessions: [{ id: 'cloud' }] })).toBe(1);
+    expect(mergeCloudData({ sessions: [sess('cloud')] })).toBe(1);
     const ids = readBackup().sessions.map((s) => s.id).sort();
     expect(ids).toEqual(['cloud', 'local']);
   });
 
   it('tolerates partial payloads (missing arrays)', () => {
-    expect(mergeCloudData({ sessions: [{ id: 'only' }] })).toBe(1);
+    expect(mergeCloudData({ sessions: [sess('only')] })).toBe(1);
     const backup = readBackup();
     expect(backup.sessions).toHaveLength(1);
     expect(backup.turns).toHaveLength(0);

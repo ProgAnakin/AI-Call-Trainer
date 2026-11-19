@@ -11,6 +11,19 @@ export type TKey = keyof Dict;
 const DICTS: Record<UiLanguage, Dict> = { pt, it, en };
 const LS_KEY = 'act.ui_lang';
 
+/**
+ * Idioma salvo → idioma válido, ou 'en'.
+ *
+ * Antes era `saved in DICTS`, e `in` enxerga chaves herdadas de Object.prototype:
+ * um valor "constructor", "toString" ou "__proto__" no storage passava como se
+ * fosse um idioma. Aqui só valem as três chaves próprias.
+ */
+export function resolveUiLang(saved: string | null | undefined): UiLanguage {
+  return typeof saved === 'string' && Object.prototype.hasOwnProperty.call(DICTS, saved)
+    ? (saved as UiLanguage)
+    : 'en';
+}
+
 interface I18nCtx {
   lang: UiLanguage;
   setLang: (l: UiLanguage) => void;
@@ -23,8 +36,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<UiLanguage>(() => {
     // Via safeStorage: um acesso cru aqui lança com dados de site bloqueados
     // (Brave/Safari privado) e, num inicializador de estado, impede o app de arrancar.
-    const saved = safeStorage.getItem(LS_KEY) as UiLanguage | null;
-    return saved && saved in DICTS ? saved : 'en';
+    return resolveUiLang(safeStorage.getItem(LS_KEY));
   });
 
   // Mantém <html lang> em sincronia — leitores de tela usam isso para a pronúncia.

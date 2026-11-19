@@ -206,7 +206,9 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkDef> = {
 };
 
 export function getFramework(id: FrameworkId): FrameworkDef {
-  return FRAMEWORKS[id] ?? FRAMEWORKS.basic;
+  // hasOwn: com id = "constructor", `FRAMEWORKS[id]` devolve a função Object
+  // (truthy) e o `?? basic` nunca disparava.
+  return Object.prototype.hasOwnProperty.call(FRAMEWORKS, id) ? FRAMEWORKS[id] : FRAMEWORKS.basic;
 }
 
 /** Rótulo localizado de um critério, procurado em todos os frameworks. */

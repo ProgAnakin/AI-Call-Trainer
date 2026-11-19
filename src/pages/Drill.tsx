@@ -263,7 +263,7 @@ export function Drill() {
       <div className="mb-4 flex justify-start">
         <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-surface-overlay px-4 py-3 text-slate-100">
           <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider opacity-60">
-            prospect
+            {t('call.prospectLabel')}
           </p>
           <p className="text-sm leading-relaxed">{current.objection}</p>
         </div>
@@ -298,6 +298,7 @@ export function Drill() {
               rows={4}
               value={draft}
               aria-label={t('drill.placeholder')}
+              maxLength={3000}
               placeholder={t('drill.placeholder')}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {

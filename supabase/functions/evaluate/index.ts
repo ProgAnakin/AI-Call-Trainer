@@ -2,25 +2,80 @@
 // Chamado UMA vez ao final da call, com o transcript completo. Devolve o
 // scorecard em JSON validado; re-pede ao modelo em caso de parse error.
 import {
+  CALL_TYPES,
   callClaude,
   checkAndLogUsage,
   clientIp,
   corsHeadersFor,
   EVAL_MODEL,
+  fail,
+  FRAMEWORK_IDS,
+  isRecord,
+  isUuid,
   json,
+  LANGUAGES,
   LIMITS,
+  oneOf,
+  parseTurns,
+  readJsonBody,
+  str,
+  UI_LANGUAGES,
+  type Failure,
+  type Turn,
 } from '../_shared/common.ts';
 
 interface Body {
   device_id: string;
-  transcript: { speaker: 'rep' | 'prospect'; content: string }[];
-  call_type: string;
-  framework: 'basic' | 'SPICED' | 'MEDDIC';
+  transcript: Turn[];
+  call_type: (typeof CALL_TYPES)[number];
+  framework: (typeof FRAMEWORK_IDS)[number];
   /** Idioma da call — as citações do transcript estão nele. */
-  language: string;
+  language: (typeof LANGUAGES)[number];
   /** Idioma da interface: em que escrever o feedback (lido, não falado). */
-  ui_language?: 'pt' | 'it' | 'en';
+  ui_language: (typeof UI_LANGUAGES)[number];
   success_criteria: string;
+}
+
+const MAX_TRANSCRIPT_CHARS = 40000;
+const MAX_CRITERIA_CHARS = 2000;
+
+/**
+ * Valida o corpo. Antes só a transcrição tinha teto de tamanho; call_type,
+ * language, ui_language e success_criteria eram interpolados no prompt sem
+ * limite nem allowlist — uma porta para inflar o custo e injetar instruções.
+ */
+function validateEvaluate(raw: unknown): { ok: true; value: Body } | Failure {
+  if (!isRecord(raw)) return fail('body');
+  if (!isUuid(raw.device_id)) return fail('device_id');
+  if (!oneOf(CALL_TYPES, raw.call_type)) return fail('call_type');
+  if (!oneOf(FRAMEWORK_IDS, raw.framework)) return fail('framework');
+  if (!oneOf(LANGUAGES, raw.language)) return fail('language');
+  // Clientes antigos em cache podem não mandar ui_language: assume inglês. Um
+  // valor PRESENTE mas desconhecido é rejeitado, em vez de virar "undefined".
+  if (raw.ui_language !== undefined && !oneOf(UI_LANGUAGES, raw.ui_language)) {
+    return fail('ui_language');
+  }
+  if (!str(raw.success_criteria, MAX_CRITERIA_CHARS)) return fail('success_criteria');
+
+  const turns = parseTurns(raw.transcript, 'transcript', {
+    maxItems: 200,
+    maxTotalChars: MAX_TRANSCRIPT_CHARS,
+  });
+  if (!turns.ok) return turns;
+  if (turns.turns.length === 0) return fail('transcript');
+
+  return {
+    ok: true,
+    value: {
+      device_id: raw.device_id,
+      transcript: turns.turns,
+      call_type: raw.call_type,
+      framework: raw.framework,
+      language: raw.language,
+      ui_language: (raw.ui_language as Body['ui_language'] | undefined) ?? 'en',
+      success_criteria: raw.success_criteria,
+    },
+  };
 }
 
 /** Pesos por critério (%) — espelham src/data/frameworks.ts. */
@@ -166,26 +221,23 @@ function parseEvaluation(raw: string, framework: Body['framework']): EvalResult 
   return parsed;
 }
 
-const MAX_TRANSCRIPT_CHARS = 40000;
-
 Deno.serve(async (req) => {
   const cors = corsHeadersFor(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405, cors);
 
   try {
-    const body = (await req.json()) as Body;
-    if (!body.device_id || !Array.isArray(body.transcript) || body.transcript.length === 0) {
-      return json({ error: 'invalid payload' }, 400, cors);
-    }
-
-    const transcriptChars = body.transcript.reduce((n, t) => n + (t?.content?.length ?? 0), 0);
-    if (transcriptChars > MAX_TRANSCRIPT_CHARS) return json({ error: 'payload too large' }, 413, cors);
+    // Tudo que não precisa do banco é rejeitado antes de tocar o limitador.
+    const parsed = await readJsonBody(req);
+    if (!parsed.ok) return json({ error: parsed.error }, parsed.status, cors);
+    const checked = validateEvaluate(parsed.value);
+    if (!checked.ok) return json({ error: checked.error }, checked.status, cors);
+    const body = checked.value;
 
     const usage = await checkAndLogUsage(body.device_id, 'evaluate', LIMITS.maxEvaluationsPerDay, {
       ip: clientIp(req),
     });
-    if (!usage.ok) return json({ error: usage.reason }, 429, cors);
+    if (!usage.ok) return json({ error: usage.reason }, usage.status, cors);
 
     const transcriptText = body.transcript
       .map((t) => `${t.speaker === 'rep' ? 'REP' : 'PROSPECT'}: ${t.content}`)

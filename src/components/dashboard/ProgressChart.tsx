@@ -1,10 +1,12 @@
 import type { WeeklyPoint } from '@/hooks/useProgress';
+import { useT } from '@/i18n';
 
 /**
  * Gráfico de linha SVG (sem libs) da média semanal de nota — evolução real
  * ao longo das semanas de treino.
  */
 export function ProgressChart({ data }: { data: WeeklyPoint[] }) {
+  const { t } = useT(); // antes do early return: hooks não podem ser condicionais
   if (data.length === 0) return null;
 
   const W = 560;
@@ -17,7 +19,7 @@ export function ProgressChart({ data }: { data: WeeklyPoint[] }) {
   const path = data.map((p, i) => `${i === 0 ? 'M' : 'L'} ${xs(i)} ${ys(p.avgScore)}`).join(' ');
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Weekly score chart">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={t('chart.weekly')}>
       {[0, 25, 50, 75, 100].map((v) => (
         <g key={v}>
           <line

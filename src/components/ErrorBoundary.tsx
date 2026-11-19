@@ -20,6 +20,8 @@ interface Copy {
   reload: string;
   home: string;
   details: string;
+  reset: string;
+  resetConfirm: string;
 }
 
 const COPY: Record<UiLanguage, Copy> = {
@@ -29,6 +31,9 @@ const COPY: Record<UiLanguage, Copy> = {
     reload: 'Reload',
     home: 'Back to home',
     details: 'Technical details',
+    reset: 'Still broken? Reset app data',
+    resetConfirm:
+      'This deletes your practice history, custom products and settings on THIS device. It cannot be undone. Continue?',
   },
   pt: {
     title: 'Algo quebrou nesta tela',
@@ -36,6 +41,9 @@ const COPY: Record<UiLanguage, Copy> = {
     reload: 'Recarregar',
     home: 'Voltar ao início',
     details: 'Detalhes técnicos',
+    reset: 'Continua quebrado? Apagar os dados do app',
+    resetConfirm:
+      'Isto apaga seu histórico de treino, produtos personalizados e configurações NESTE dispositivo. Não dá para desfazer. Continuar?',
   },
   it: {
     title: 'Qualcosa si è rotto in questa schermata',
@@ -43,12 +51,42 @@ const COPY: Record<UiLanguage, Copy> = {
     reload: 'Ricarica',
     home: 'Torna alla home',
     details: 'Dettagli tecnici',
+    reset: 'Ancora bloccato? Reimposta i dati dell’app',
+    resetConfirm:
+      'Questo elimina lo storico degli allenamenti, i prodotti personalizzati e le impostazioni su QUESTO dispositivo. Non si può annullare. Continuare?',
   },
 };
 
 function copy(): Copy {
-  const saved = safeStorage.getItem(LS_KEY) as UiLanguage | null;
-  return (saved && COPY[saved]) || COPY.en;
+  const saved = safeStorage.getItem(LS_KEY);
+  // hasOwn: com "constructor" no storage, `COPY[saved]` era a função Object e o
+  // cartão de erro renderizava sem texto nenhum.
+  return typeof saved === 'string' && Object.prototype.hasOwnProperty.call(COPY, saved)
+    ? COPY[saved as UiLanguage]
+    : COPY.en;
+}
+
+/**
+ * Última saída: apaga tudo que o app guardou (chaves `act.*`) e recarrega.
+ *
+ * Existe porque o app pode ficar preso numa tela de erro por causa de dado
+ * corrompido no próprio storage — e aí recarregar não adianta, o dado ruim
+ * continua lá. Limpar "dados do site" pelo navegador resolve, mas quase ninguém
+ * sabe fazer. Pede confirmação: é destrutivo e irreversível.
+ */
+function resetAppData(message: string): void {
+  if (!window.confirm(message)) return;
+  try {
+    const mine: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('act.')) mine.push(k);
+    }
+    for (const k of mine) localStorage.removeItem(k);
+  } catch {
+    /* storage negado: não há o que limpar */
+  }
+  window.location.assign('/');
 }
 
 interface Props {
@@ -107,7 +145,15 @@ export class ErrorBoundary extends Component<Props, State> {
             </a>
           </div>
 
-          <details className="mt-5 text-left">
+          <button
+            type="button"
+            onClick={() => resetAppData(c.resetConfirm)}
+            className="mt-4 text-xs text-slate-500 underline hover:text-red-400"
+          >
+            {c.reset}
+          </button>
+
+          <details className="mt-4 text-left">
             <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-400">
               {c.details}
             </summary>

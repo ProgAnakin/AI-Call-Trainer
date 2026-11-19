@@ -107,7 +107,11 @@ export function ScenarioBuilder({ initial, onSave, onCancel }: Props) {
           />
         </Field>
         <Field label={t('form.successCriteria')}>
-          <Input value={criteria} onChange={(e) => setCriteria(e.target.value)} />
+          <Input
+          value={criteria}
+          maxLength={1000}
+          onChange={(e) => setCriteria(e.target.value)}
+        />
         </Field>
       </div>
       <div className="flex gap-2">

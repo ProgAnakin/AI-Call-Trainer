@@ -86,9 +86,9 @@ export function PersonaForm({ initial, onSave, onCancel }: Props) {
       </Field>
       <Field label={t('form.buyingStage')}>
         <Select value={stage} onChange={(e) => setStage(e.target.value as BuyingStage)}>
-          <option value="cold">cold</option>
-          <option value="aware">aware</option>
-          <option value="evaluating">evaluating</option>
+          <option value="cold">{t('form.stage.cold')}</option>
+          <option value="aware">{t('form.stage.aware')}</option>
+          <option value="evaluating">{t('form.stage.evaluating')}</option>
         </Select>
       </Field>
       <div className="flex gap-2">

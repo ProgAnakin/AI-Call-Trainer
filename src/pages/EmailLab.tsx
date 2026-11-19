@@ -59,6 +59,7 @@ export function EmailLab() {
         <Field label={t('email.subjectLabel')}>
           <Input
             value={subject}
+            maxLength={300}
             placeholder={t('email.subjectPlaceholder')}
             onChange={(e) => setSubject(e.target.value)}
           />
@@ -67,6 +68,7 @@ export function EmailLab() {
           <Textarea
             rows={9}
             value={body}
+            maxLength={20000}
             placeholder={t('email.bodyPlaceholder')}
             onChange={(e) => setBody(e.target.value)}
           />

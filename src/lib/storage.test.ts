@@ -58,7 +58,11 @@ function evaluation(sessionId: string): Evaluation {
     session_id: sessionId,
     created_at: new Date(Date.UTC(2026, 0, 2)).toISOString(),
     overall_score: 70,
-  } as unknown as Evaluation;
+    framework: 'basic',
+    scores: { abertura: { score: 7, comment: 'ok' } },
+    strengths: [{ point: 'a', quote: 'b' }],
+    improvements: [{ point: 'a', instead_try: 'b' }],
+  } as Evaluation;
 }
 
 let store: ReturnType<typeof budgetStorage>;
@@ -103,7 +107,7 @@ describe('pruneHistory', () => {
     expect(listTurns('s2')).toHaveLength(1);
   });
 
-  it('descarta primeiro as sessões sem data', () => {
+  it('sessão sem data válida é ignorada na leitura (nunca chega a ser podada)', () => {
     const undated = { ...session(5), started_at: '' } as Session;
     store.seed('act.sessions', JSON.stringify([undated, session(1), session(2)]));
 
